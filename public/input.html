@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Input Suara TPS — Pilkades Sriamur</title>
+  <link rel="stylesheet" href="../src/styles/main.css">
+</head>
+<body>
+
+<nav class="navbar">
+  <a class="navbar-brand" href="index.html">🗳️ Tabulasi Pilkades</a>
+  <div class="nav-links">
+    <a href="index.html">Beranda</a>
+    <a href="hasil.html">Hasil Live</a>
+    <a href="input.html" class="active">Input Data</a>
+    <a href="rekap.html">Rekap</a>
+    <a href="admin.html">Admin</a>
+  </div>
+</nav>
+
+<div class="section">
+  <div class="section-title">📝 Input Data Suara TPS</div>
+
+  <!-- Pilih TPS -->
+  <div class="card">
+    <div class="form-group">
+      <label class="form-label">Pilih Nomor TPS</label>
+      <select id="pilih-tps" class="form-control" onchange="loadTPS()">
+        <option value="">— Pilih TPS —</option>
+      </select>
+    </div>
+    <div id="tps-status" style="display:none;margin-bottom:12px;"></div>
+  </div>
+
+  <!-- Form Input -->
+  <div id="form-input" style="display:none;">
+    <div class="card">
+      <div style="font-weight:800;margin-bottom:12px;color:var(--primary);">📊 Data Pengguna Hak Pilih</div>
+      <div class="form-group">
+        <label class="form-label">Jumlah Pemilih Terdaftar (DPT)</label>
+        <input type="number" id="jml-pemilih" class="form-control" min="0" placeholder="Contoh: 300">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Suara Sah</label>
+        <input type="number" id="suara-sah" class="form-control" min="0" placeholder="Contoh: 280" oninput="updateTotal()">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Suara Tidak Sah</label>
+        <input type="number" id="suara-tidak-sah" class="form-control" min="0" placeholder="Contoh: 15" oninput="updateTotal()">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Abstain (Golput)</label>
+        <input type="number" id="suara-abstain" class="form-control" min="0" placeholder="Contoh: 5" oninput="updateTotal()">
+      </div>
+      <div style="background:var(--primary-light);padding:10px 14px;border-radius:10px;font-size:14px;font-weight:700;color:var(--primary-dark);">
+        Total Suara Masuk: <span id="total-masuk">0</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="font-weight:800;margin-bottom:12px;color:var(--primary);">🗳️ Perolehan Suara per Calon</div>
+      <div id="calon-inputs"><div class="spinner"></div></div>
+    </div>
+
+    <div class="card">
+      <div class="form-group">
+        <label class="form-label">Catatan (opsional)</label>
+        <textarea id="catatan" class="form-control" rows="2" placeholder="Catatan dari saksi TPS..."></textarea>
+      </div>
+    </div>
+
+    <!-- Validasi -->
+    <div id="validasi-box" style="display:none;margin-bottom:12px;padding:12px;border-radius:10px;font-size:13px;font-weight:600;"></div>
+
+    <div style="display:flex;gap:10px;">
+      <button class="btn btn-outline" onclick="resetForm()" style="flex:0.4;">Reset</button>
+      <button class="btn btn-primary" id="btn-submit" onclick="submitSuara()" style="flex:1;">✅ Simpan Data TPS</button>
+    </div>
+  </div>
+
+  <!-- Sukses -->
+  <div id="sukses" style="display:none;" class="card" style="text-align:center;padding:40px;">
+    <div style="font-size:56px;margin-bottom:12px;">✅</div>
+    <div style="font-size:18px;font-weight:800;color:var(--green);margin-bottom:8px;">Data TPS Berhasil Disimpan!</div>
+    <div style="color:var(--muted);margin-bottom:20px;" id="sukses-text"></div>
+    <div style="display:flex;gap:10px;">
+      <a href="hasil.html" class="btn btn-primary" style="flex:1;">📊 Lihat Hasil</a>
+      <button class="btn btn-outline" onclick="inputLagi()" style="flex:1;">📝 Input TPS Lain</button>
+    </div>
+  </div>
+</div>
+
+<script src="../src/scripts/config.js"></script>
+<script src="../src/scripts/utils.js"></script>
+<script>
+  let calonData = [];
+  let currentTPS = null;
+
+  async function init() {
+    // Load calon
+    const resC = await Utils.api("get_calon", {});
+    if (resC.ok) calonData = resC.calon;
+
+    // Load TPS list
+    const resT = await Utils.api("get_tps", {});
+    if (resT.ok) {
+      const sel = document.getElementById("pilih-tps");
+      resT.tps.forEach(t => {
+        const status = t.status_input === "sudah" ? " ✅" : "";
+        sel.innerHTML += `<option value="${t.nomor_tps}">TPS ${t.nomor_tps}${status}</option>`;
+      });
+    }
+
+    // URL param
+    const tpsParam = new URLSearchParams(location.search).get("tps");
+    if (tpsParam) { sel.value = tpsParam; loadTPS(); }
+  }
+
+  async function loadTPS() {
+    const nomor = parseInt(document.getElementById("pilih-tps").value);
+    if (!nomor) { document.getElementById("form-input").style.display = "none"; return; }
+    currentTPS = nomor;
+
+    // Status TPS
+    const resT = await Utils.api("get_tps", {});
+    const tps = resT.tps.find(t => t.nomor_tps === nomor);
+    const statusEl = document.getElementById("tps-status");
+    if (tps && tps.status_input === "sudah") {
+      statusEl.style.display = "block";
+      statusEl.innerHTML = `<div class="badge badge-sudah">TPS ${nomor} sudah diinput · ${new Date(tps.waktu_input).toLocaleString("id-ID")}</div><div style="margin-top:8px;"><button class="btn btn-outline btn-sm" onclick="editTPS(${nomor})">✏️ Edit Data</button> <button class="btn btn-danger btn-sm" onclick="resetTPS(${nomor})">🗑️ Reset</button></div>`;
+    } else {
+      statusEl.style.display = "none";
+    }
+
+    // Render calon inputs
+    const calonEl = document.getElementById("calon-inputs");
+    const COLORS = ['#1e40af', '#dc2626', '#16a34a', '#f59e0b'];
+    calonEl.innerHTML = calonData.map(c => `
+      <div class="form-group">
+        <label class="form-label">
+          <span style="display:inline-flex;align-items:center;gap:6px;">
+            <span style="display:inline-flex;width:28px;height:28px;border-radius:50%;align-items:center;justify-content:center;background:${COLORS[c.nomor_urut-1]||'#888'};color:#fff;font-weight:800;">${c.nomor_urut}</span>
+            ${c.nama || 'Calon ' + c.nomor_urut}
+          </span>
+        </label>
+        <input type="number" id="calon-${c.id}" data-nomor="${c.nomor_urut}" data-calon-id="${c.id}" class="form-control calon-input" min="0" placeholder="Jumlah suara" oninput="updateTotal()">
+      </div>`).join("");
+
+    // Load existing data jika sudah diinput
+    if (tps && tps.status_input === "sudah") {
+      document.getElementById("jml-pemilih").value = tps.jumlah_pemilih || "";
+      document.getElementById("suara-sah").value = tps.suara_sah || "";
+      document.getElementById("suara-tidak-sah").value = tps.suara_tidak_sah || "";
+      document.getElementById("suara-abstain").value = tps.suara_abstain || "";
+      document.getElementById("catatan").value = tps.catatan || "";
+
+      const resS = await Utils.api("get_suara_tps", { nomor_tps: nomor });
+      if (resS.ok) {
+        resS.suara.forEach(s => {
+          const el = document.getElementById(`calon-${s.calon_id}`);
+          if (el) el.value = s.jumlah_suara;
+        });
+      }
+      updateTotal();
+    }
+
+    document.getElementById("form-input").style.display = "block";
+    document.getElementById("sukses").style.display = "none";
+  }
+
+  function updateTotal() {
+    const sah = parseInt(document.getElementById("suara-sah").value) || 0;
+    const tidakSah = parseInt(document.getElementById("suara-tidak-sah").value) || 0;
+    const abstain = parseInt(document.getElementById("suara-abstain").value) || 0;
+    const total = sah + tidakSah + abstain;
+    document.getElementById("total-masuk").textContent = Utils.formatAngka(total);
+
+    // Validasi: jumlah suara calon = suara sah
+    let totalCalon = 0;
+    document.querySelectorAll(".calon-input").forEach(el => {
+      totalCalon += parseInt(el.value) || 0;
+    });
+
+    const vBox = document.getElementById("validasi-box");
+    if (totalCalon > 0 || sah > 0) {
+      if (totalCalon === sah) {
+        vBox.style.display = "block";
+        vBox.style.background = "#dcfce7";
+        vBox.style.color = "#166534";
+        vBox.innerHTML = `✅ Valid: Total suara calon (${Utils.formatAngka(totalCalon)}) = Suara sah (${Utils.formatAngka(sah)})`;
+      } else {
+        vBox.style.display = "block";
+        vBox.style.background = "#fef3c7";
+        vBox.style.color = "#92400e";
+        vBox.innerHTML = `⚠️ Selisih: Suara calon (${Utils.formatAngka(totalCalon)}) vs Suara sah (${Utils.formatAngka(sah)}) = ${Utils.formatAngka(sah - totalCalon)}`;
+      }
+    } else {
+      vBox.style.display = "none";
+    }
+  }
+
+  async function submitSuara() {
+    const nomor_tps = currentTPS;
+    if (!nomor_tps) { Utils.toast("Pilih TPS dulu!", "warn"); return; }
+
+    const jumlah_pemilih = parseInt(document.getElementById("jml-pemilih").value) || 0;
+    const suara_sah = parseInt(document.getElementById("suara-sah").value) || 0;
+    const suara_tidak_sah = parseInt(document.getElementById("suara-tidak-sah").value) || 0;
+    const suara_abstain = parseInt(document.getElementById("suara-abstain").value) || 0;
+    const catatan = document.getElementById("catatan").value.trim();
+
+    if (!jumlah_pemilih) { Utils.toast("Isi jumlah pemilih!", "warn"); return; }
+
+    const suara_calon = [];
+    document.querySelectorAll(".calon-input").forEach(el => {
+      suara_calon.push({
+        calon_id: el.dataset.calonId,
+        nomor_urut: parseInt(el.dataset.nomor),
+        jumlah_suara: parseInt(el.value) || 0
+      });
+    });
+
+    const totalCalon = suara_calon.reduce((s, c) => s + c.jumlah_suara, 0);
+    if (totalCalon !== suara_sah) {
+      if (!confirm(`Total suara calon (${totalCalon}) tidak sama dengan suara sah (${suara_sah}). Tetap simpan?`)) return;
+    }
+
+    const btn = document.getElementById("btn-submit");
+    btn.disabled = true;
+    btn.textContent = "⏳ Menyimpan...";
+
+    const res = await Utils.api("input_suara", {
+      nomor_tps, jumlah_pemilih, suara_sah, suara_tidak_sah, suara_abstain, suara_calon, catatan
+    });
+
+    if (res.ok) {
+      document.getElementById("form-input").style.display = "none";
+      document.getElementById("sukses").style.display = "block";
+      document.getElementById("sukses-text").textContent = `TPS ${nomor_tps} telah berhasil diinput ke pusat tabulasi.`;
+    } else {
+      Utils.toast("Gagal: " + (res.error || "coba lagi"), "error");
+      btn.disabled = false;
+      btn.textContent = "✅ Simpan Data TPS";
+    }
+  }
+
+  function resetForm() {
+    document.querySelectorAll("input").forEach(el => el.value = "");
+    document.getElementById("catatan").value = "";
+    updateTotal();
+  }
+
+  function inputLagi() {
+    document.getElementById("sukses").style.display = "none";
+    document.getElementById("form-input").style.display = "none";
+    document.getElementById("pilih-tps").value = "";
+    currentTPS = null;
+    window.scrollTo(0, 0);
+  }
+
+  function editTPS(n) { loadTPS(); }
+
+  async function resetTPS(n) {
+    if (!confirm(`Reset data TPS ${n}? Semua suara akan dihapus.`)) return;
+    const res = await Utils.api("reset_tps", { nomor_tps: n });
+    if (res.ok) {
+      Utils.toast(`TPS ${n} direset`, "success");
+      loadTPS();
+    }
+  }
+
+  init();
+</script>
+</body>
+</html>

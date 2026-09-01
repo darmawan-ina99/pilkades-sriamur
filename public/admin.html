@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin — Pilkades Sriamur 2024</title>
+  <link rel="stylesheet" href="../src/styles/main.css">
+</head>
+<body>
+
+<nav class="navbar">
+  <a class="navbar-brand" href="index.html">🗳️ Tabulasi Pilkades</a>
+  <div class="nav-links">
+    <a href="index.html">Beranda</a>
+    <a href="hasil.html">Hasil Live</a>
+    <a href="input.html">Input Data</a>
+    <a href="rekap.html">Rekap</a>
+    <a href="admin.html" class="active">Admin</a>
+  </div>
+</nav>
+
+<!-- Login -->
+<div class="section" id="panel-login">
+  <div class="section-title">🔐 Login Admin</div>
+  <div class="card">
+    <div class="form-group">
+      <label class="form-label">PIN Admin</label>
+      <input type="password" id="admin-pin" class="form-control" placeholder="Masukkan PIN" onkeypress="if(event.key==='Enter')loginAdmin()">
+    </div>
+    <button class="btn btn-primary btn-block" onclick="loginAdmin()">🔑 Masuk</button>
+  </div>
+</div>
+
+<!-- Panel Admin -->
+<div class="section" id="panel-admin" style="display:none;">
+  <div class="section-title">⚙️ Panel Admin</div>
+
+  <!-- Setup Calon -->
+  <div class="card">
+    <div style="font-weight:800;margin-bottom:12px;color:var(--primary);">🗳️ Setup Data Calon</div>
+    <div style="font-size:13px;color:var(--muted);margin-bottom:12px;">Masukkan nama 4 calon Kepala Desa</div>
+    <div id="calon-forms"></div>
+    <button class="btn btn-success btn-block" onclick="simpanCalon()">💾 Simpan Data Calon</button>
+  </div>
+
+  <!-- Status TPS -->
+  <div class="card">
+    <div style="font-weight:800;margin-bottom:12px;color:var(--primary);">📍 Status Input TPS</div>
+    <div id="admin-tps-status"><div class="spinner"></div></div>
+    <button class="btn btn-outline btn-sm" style="margin-top:12px;" onclick="loadTPSStatus()">🔄 Refresh</button>
+  </div>
+
+  <!-- Aksi -->
+  <div class="card">
+    <div style="font-weight:800;margin-bottom:12px;color:var(--primary);">⚡ Aksi Cepat</div>
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <a href="input.html" class="btn btn-primary btn-block">📝 Input Suara TPS</a>
+      <a href="hasil.html" class="btn btn-primary btn-block">📊 Lihat Hasil Live</a>
+      <a href="rekap.html" class="btn btn-primary btn-block">📋 Rekapitulasi</a>
+    </div>
+  </div>
+
+  <button class="btn btn-outline btn-block" style="border-color:var(--accent);color:var(--accent);" onclick="logout()">🚪 Logout</button>
+</div>
+
+<script src="../src/scripts/config.js"></script>
+<script src="../src/scripts/utils.js"></script>
+<script>
+  const COLORS = ['#1e40af', '#dc2626', '#16a34a', '#f59e0b'];
+  let calonData = [];
+
+  function cekLogin() {
+    if (Utils.getSesi()) {
+      document.getElementById("panel-login").style.display = "none";
+      document.getElementById("panel-admin").style.display = "block";
+      loadCalonForm();
+      loadTPSStatus();
+    }
+  }
+
+  function loginAdmin() {
+    const pin = document.getElementById("admin-pin").value;
+    if (pin === CONFIG.ADMIN_PIN) {
+      Utils.setSesi({ role: "admin", waktu: Date.now() });
+      Utils.toast("Login berhasil!", "success");
+      cekLogin();
+    } else {
+      Utils.toast("PIN salah!", "error");
+    }
+  }
+
+  function logout() {
+    Utils.hapusSesi();
+    document.getElementById("panel-login").style.display = "block";
+    document.getElementById("panel-admin").style.display = "none";
+  }
+
+  async function loadCalonForm() {
+    const res = await Utils.api("get_calon", {});
+    calonData = res.ok ? res.calon : [];
+    const el = document.getElementById("calon-forms");
+    el.innerHTML = "";
+    for (let i = 1; i <= CONFIG.CALON_COUNT; i++) {
+      const existing = calonData.find(c => c.nomor_urut === i);
+      el.innerHTML += `
+        <div class="form-group">
+          <label class="form-label">
+            <span style="display:inline-flex;align-items:center;gap:6px;">
+              <span style="display:inline-flex;width:28px;height:28px;border-radius:50%;align-items:center;justify-content:center;background:${COLORS[i-1]};color:#fff;font-weight:800;">${i}</span>
+              Calon No. Urut ${i}
+            </span>
+          </label>
+          <input type="text" id="calon-nama-${i}" class="form-control" placeholder="Nama calon no. ${i}" value="${existing?.nama || ''}">
+          <input type="hidden" id="calon-id-${i}" value="${existing?.id || ''}">
+        </div>`;
+    }
+  }
+
+  async function simpanCalon() {
+    const calon = [];
+    for (let i = 1; i <= CONFIG.CALON_COUNT; i++) {
+      const nama = document.getElementById(`calon-nama-${i}`).value.trim();
+      if (nama) calon.push({ nomor: i, nama });
+    }
+    if (calon.length === 0) { Utils.toast("Isi minimal 1 calon!", "warn"); return; }
+
+    // Cek apakah sudah ada calon
+    if (calonData.length > 0) {
+      // Update langsung via API (tapi API kita hanya support create baru)
+      // Jadi kita perlu update lewat API terpisah atau recreate
+      Utils.toast("Calon sudah disimpan sebelumnya. Update langsung tidak tersedia di versi ini.", "warn");
+      return;
+    }
+
+    const res = await Utils.api("setup_calon", { calon });
+    if (res.ok) {
+      Utils.toast(res.pesan, "success");
+      loadCalonForm();
+    } else {
+      Utils.toast("Gagal: " + res.error, "error");
+    }
+  }
+
+  async function loadTPSStatus() {
+    const res = await Utils.api("rekap", {});
+    if (!res.ok) return;
+    const r = res.rekap;
+    const el = document.getElementById("admin-tps-status");
+    el.innerHTML = `
+      <div style="display:flex;gap:12px;margin-bottom:12px;">
+        <div class="badge badge-sudah">✅ ${r.tps_sudah} TPS Selesai</div>
+        <div class="badge badge-belum">⏳ ${r.tps_belum} TPS Belum</div>
+      </div>
+      <div class="tps-grid">
+        ${r.detail_tps.map(t => {
+          const cls = t.status_input === "sudah" ? "sudah" : "belum";
+          return `<a href="input.html?tps=${t.nomor_tps}" class="tps-chip ${cls}" style="text-decoration:none;">${t.nomor_tps}</a>`;
+        }).join("")}
+      </div>
+      ${r.tps_belum_list && r.tps_belum_list.length > 0 ? `
+        <div style="margin-top:12px;font-size:13px;color:var(--muted);">Belum diinput:</div>
+        <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:6px;">
+          ${r.tps_belum_list.map(n => `<span class="badge badge-belum">TPS ${n}</span>`).join("")}
+        </div>
+      ` : ''}
+    `;
+  }
+
+  cekLogin();
+</script>
+</body>
+</html>
