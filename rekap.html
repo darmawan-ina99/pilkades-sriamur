@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Rekap — Realcount Pilkades</title>
-  <link rel="stylesheet" href="src/styles/main.css?v=11">
+  <link rel="stylesheet" href="src/styles/main.css?v=12">
 </head>
 <body>
 <nav class="navbar">
@@ -47,20 +47,32 @@
   <div id="tps-detail"><div class="spinner"></div></div>
 
   <button class="btn btn-primary btn-block" onclick="loadRekap()">🔄 Refresh Data</button>
+  <button class="btn btn-success btn-block" onclick="downloadPDF()" id="btn-pdf" style="margin-top:8px;">📄 Download Hasil (PDF)</button>
 </div>
 
-<script src="src/scripts/config.js?v=11"></script>
-<script src="src/scripts/utils.js?v=11"></script>
+<script src="src/scripts/config.js?v=12"></script>
+<script src="src/scripts/utils.js?v=12"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
 <script>
   const COLORS = ['#1e40af', '#dc2626', '#16a34a', '#f59e0b'];
+  let rekapData = null;
+  let configData = null;
+
   async function loadConfig() {
     const res = await Utils.api("get_config", {});
-    if (res.ok && res.config) { document.getElementById("hero-judul").textContent = res.config.judul || "PILKADES SRIAMUR 2026"; document.title = "Rekap — " + (res.config.judul || "Realcount"); }
+    if (res.ok && res.config) {
+      configData = res.config;
+      document.getElementById("hero-judul").textContent = res.config.judul || "PILKADES SRIAMUR 2026";
+      document.title = "Rekap — " + (res.config.judul || "Realcount");
+    }
   }
+
   async function loadRekap() {
     const res = await Utils.api("rekap", {});
     if (!res.ok) return;
-    const r = res.rekap;
+    rekapData = res.rekap;
+    const r = rekapData;
     document.getElementById("tps-sudah").textContent = r.tps_sudah;
     const pct = r.tps_total > 0 ? Math.round((r.tps_sudah / r.tps_total) * 100) : 0;
     document.getElementById("tps-fill").style.width = pct + "%";
@@ -73,19 +85,184 @@
     document.getElementById("calon-list").innerHTML = r.calon.map((c, i) => {
       const pctSuara = r.total_suara_sah > 0 ? Math.round((c.suara / r.total_suara_sah) * 100) : 0;
       const color = COLORS[c.nomor_urut - 1] || '#888';
-      const fotoHTML = c.foto ? `<img src="${c.foto}" class="candidate-foto" alt="${c.nama||''}">` : `<div class="candidate-foto-placeholder" style="background:${color};">${c.nomor_urut}</div>`;
-      return `<div class="candidate-card ${i===0&&c.suara>0?'winner':''}"><div class="candidate-header">${fotoHTML}<div class="candidate-info"><div class="candidate-name">${c.nama||'Calon '+c.nomor_urut}</div><div class="candidate-rank">No. ${c.nomor_urut} · #${i+1}</div></div><div class="candidate-votes"><div class="num">${Utils.formatAngka(c.suara)}</div><div class="pct">${pctSuara}%</div></div></div><div class="bar-container"><div class="bar-fill" style="width:${(c.suara/maxSuara)*100}%;background:${color};"></div></div></div>`;
+      const fotoHTML = c.foto ? '<img src="' + c.foto + '" class="candidate-foto" alt="' + (c.nama||'') + '">' : '<div class="candidate-foto-placeholder" style="background:' + color + ';">' + c.nomor_urut + '</div>';
+      const winnerBadge = i === 0 && c.suara > 0 ? '<span style="background:#f59e0b;color:#fff;font-size:11px;padding:2px 8px;border-radius:6px;margin-left:6px;">🏆 UNGGUL</span>' : '';
+      return '<div class="candidate-card ' + (i===0&&c.suara>0?'winner':'') + '"><div class="candidate-header">' + fotoHTML + '<div class="candidate-info"><div class="candidate-name">' + (c.nama||'Calon '+c.nomor_urut) + winnerBadge + '</div><div class="candidate-rank">No. ' + c.nomor_urut + ' · #' + (i+1) + '</div></div><div class="candidate-votes"><div class="num">' + Utils.formatAngka(c.suara) + '</div><div class="pct">' + pctSuara + '%</div></div></div><div class="bar-container"><div class="bar-fill" style="width:' + (c.suara/maxSuara)*100 + '%;background:' + color + ';"></div></div></div>';
     }).join("");
     document.getElementById("tps-detail").innerHTML = r.detail_tps.map(t => {
       const cls = t.status_input === "sudah" ? "badge-sudah" : "badge-belum";
       const statusText = t.status_input === "sudah" ? "✅ Sudah" : "⏳ Belum";
       let calonRow = "";
       if (t.status_input === "sudah") {
-        calonRow = r.calon.map(c => { const s = (t.suara_calon && t.suara_calon[c.nomor_urut]) || 0; return `<div style="font-size:12px;color:var(--muted);">${c.nama||'Calon '+c.nomor_urut}: <strong>${Utils.formatAngka(s)}</strong></div>`; }).join("");
+        calonRow = r.calon.map(c => { const s = (t.suara_calon && t.suara_calon[c.nomor_urut]) || 0; return '<div style="font-size:12px;color:var(--muted);">' + (c.nama||'Calon '+c.nomor_urut) + ': <strong>' + Utils.formatAngka(s) + '</strong></div>'; }).join("");
       }
-      return `<div class="card" style="padding:12px;"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;"><div style="font-weight:800;">TPS ${t.nomor_tps}</div><span class="badge ${cls}">${statusText}</span></div><div style="font-size:12px;color:var(--muted);">DPT: ${Utils.formatAngka(t.jumlah_pemilih)} · Sah: ${Utils.formatAngka(t.suara_sah)} · Tidak Sah: ${Utils.formatAngka(t.suara_tidak_sah)}</div>${t.status_input === "sudah" ? `<div style="margin-top:8px;border-top:1px solid var(--border);padding-top:8px;">${calonRow}<div style="font-size:11px;color:var(--muted);margin-top:4px;">Update: ${Utils.formatWaktu(t.waktu_input)}</div></div>` : ""}</div>`;
+      return '<div class="card" style="padding:12px;"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;"><div style="font-weight:800;">TPS ' + t.nomor_tps + '</div><span class="badge ' + cls + '">' + statusText + '</span></div><div style="font-size:12px;color:var(--muted);">DPT: ' + Utils.formatAngka(t.jumlah_pemilih) + ' · Sah: ' + Utils.formatAngka(t.suara_sah) + ' · Tidak Sah: ' + Utils.formatAngka(t.suara_tidak_sah) + '</div>' + (t.status_input === "sudah" ? '<div style="margin-top:8px;border-top:1px solid var(--border);padding-top:8px;">' + calonRow + '<div style="font-size:11px;color:var(--muted);margin-top:4px;">Update: ' + Utils.formatWaktu(t.waktu_input) + '</div></div>' : "") + '</div>';
     }).join("");
   }
+
+  function downloadPDF() {
+    if (!rekapData) { Utils.toast("Data belum dimuat!", "warn"); return; }
+    Utils.toast("Membuat PDF...", "info");
+    const r = rekapData;
+    const judul = configData ? configData.judul : "PILKADES SRIAMUR 2026";
+    const desa = configData ? configData.desa : "Desa Sriamur";
+    const now = new Date();
+    const tgl = now.toLocaleDateString("id-ID", { day:"2-digit", month:"long", year:"numeric" });
+    const jam = now.toLocaleTimeString("id-ID", { hour:"2-digit", minute:"2-digit", timeZone:"Asia/Jakarta" }) + " WIB";
+
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+    const pw = 210, ph = 297;
+    const mx = 14;
+
+    // Header bar
+    doc.setFillColor(15, 23, 42);
+    doc.rect(0, 0, pw, 28, "F");
+    doc.setTextColor(255,255,255);
+    doc.setFontSize(14);
+    doc.setFont("helvetica","bold");
+    doc.text(judul, mx, 12);
+    doc.setFontSize(10);
+    doc.setFont("helvetica","normal");
+    doc.text("REKAPITULASI SUARA — " + desa, mx, 18);
+    doc.setTextColor(245, 158, 11);
+    doc.setFontSize(8);
+    doc.text("REALCOUNT INTERNAL / HASIL SEMENTARA", mx, 24);
+
+    // Timestamp
+    doc.setTextColor(100,116,139);
+    doc.setFontSize(8);
+    doc.text("Dibuat: " + tgl + " " + jam, pw - mx, 24, { align: "right" });
+
+    // Summary section
+    let y = 36;
+    doc.setTextColor(15,23,42);
+    doc.setFontSize(11);
+    doc.setFont("helvetica","bold");
+    doc.text("RINGKASAN", mx, y);
+    y += 4;
+    doc.setDrawColor(226,232,240);
+    doc.line(mx, y, pw-mx, y);
+    y += 6;
+
+    const pctTPS = r.tps_total > 0 ? Math.round((r.tps_sudah / r.tps_total) * 100) : 0;
+    doc.setFontSize(9);
+    doc.setFont("helvetica","normal");
+    doc.setTextColor(30,41,59);
+    doc.text("TPS Terinput:", mx, y);
+    doc.setFont("helvetica","bold");
+    doc.text(r.tps_sudah + " / " + r.tps_total + " (" + pctTPS + "%)", mx + 40, y);
+    y += 5;
+    doc.setFont("helvetica","normal");
+    doc.text("Total DPT:", mx, y);
+    doc.setFont("helvetica","bold");
+    doc.text(Utils.formatAngka(r.total_pemilih) + " jiwa", mx + 40, y);
+    y += 5;
+    doc.setFont("helvetica","normal");
+    doc.text("Partisipasi:", mx, y);
+    doc.setFont("helvetica","bold");
+    doc.text(r.persentase_partisipasi + "%", mx + 40, y);
+    y += 5;
+    doc.setFont("helvetica","normal");
+    doc.text("Suara Sah:", mx, y);
+    doc.setFont("helvetica","bold");
+    doc.setTextColor(22,163,74);
+    doc.text(Utils.formatAngka(r.total_suara_sah), mx + 40, y);
+    doc.setTextColor(30,41,59);
+    y += 5;
+    doc.setFont("helvetica","normal");
+    doc.text("Suara Tidak Sah:", mx, y);
+    doc.setFont("helvetica","bold");
+    doc.setTextColor(220,38,38);
+    doc.text(Utils.formatAngka(r.total_suara_tidak_sah), mx + 40, y);
+    doc.setTextColor(30,41,59);
+    y += 5;
+    doc.setFont("helvetica","normal");
+    doc.text("Abstain:", mx, y);
+    doc.setFont("helvetica","bold");
+    doc.setTextColor(245,158,11);
+    doc.text(Utils.formatAngka(r.total_abstain), mx + 40, y);
+    doc.setTextColor(30,41,59);
+    y += 8;
+
+    // Candidate results table
+    doc.setFontSize(11);
+    doc.setFont("helvetica","bold");
+    doc.text("PEROLEHAN SUARA PER CALON", mx, y);
+    y += 4;
+    doc.line(mx, y, pw-mx, y);
+    y += 3;
+
+    const calonRows = r.calon.map((c, i) => {
+      const pctS = r.total_suara_sah > 0 ? ((c.suara / r.total_suara_sah) * 100).toFixed(1) + "%" : "0%";
+      const rank = i === 0 && c.suara > 0 ? "#1 UNGGUL" : "#" + (i+1);
+      return [String(c.nomor_urut), c.nama || "Calon " + c.nomor_urut, Utils.formatAngka(c.suara), pctS, rank];
+    });
+
+    doc.autoTable({
+      head: [["No.", "Nama Calon", "Suara", "Persentase", "Peringkat"]],
+      body: calonRows,
+      startY: y,
+      margin: { left: mx, right: mx },
+      styles: { fontSize: 9, cellPadding: 3 },
+      headStyles: { fillColor: [15,23,42], textColor: 255, fontStyle: "bold" },
+      alternateRowStyles: { fillColor: [248,250,252] },
+      columnStyles: { 0: { cellWidth: 15 }, 2: { halign: "right" }, 3: { halign: "right" }, 4: { halign: "center" } }
+    });
+
+    y = doc.lastAutoTable.finalY + 10;
+
+    // Detail per TPS table
+    if (y > ph - 60) { doc.addPage(); y = 20; }
+    doc.setFontSize(11);
+    doc.setFont("helvetica","bold");
+    doc.text("DETAIL SUARA PER TPS", mx, y);
+    y += 4;
+    doc.line(mx, y, pw-mx, y);
+    y += 3;
+
+    const tpsRows = r.detail_tps.map(t => {
+      const status = t.status_input === "sudah" ? "Sudah" : "Belum";
+      const calonSuara = r.calon.map(c => {
+        const s = (t.suara_calon && t.suara_calon[c.nomor_urut]) || 0;
+        return String(s);
+      });
+      return ["TPS " + t.nomor_tps, status, Utils.formatAngka(t.jumlah_pemilih), Utils.formatAngka(t.suara_sah), Utils.formatAngka(t.suara_tidak_sah), Utils.formatAngka(t.suara_abstain), ...calonSuara];
+    });
+
+    const tpsHead = ["TPS", "Status", "DPT", "Sah", "T.Sah", "Abst.", ...r.calon.map(c => "C" + c.nomor_urut)];
+    doc.autoTable({
+      head: [tpsHead],
+      body: tpsRows,
+      startY: y,
+      margin: { left: mx, right: mx },
+      styles: { fontSize: 7, cellPadding: 2 },
+      headStyles: { fillColor: [15,23,42], textColor: 255, fontStyle: "bold" },
+      alternateRowStyles: { fillColor: [248,250,252] },
+      columnStyles: { 1: { halign: "center" }, 2: { halign: "right" }, 3: { halign: "right" }, 4: { halign: "right" }, 5: { halign: "right" } }
+    });
+
+    y = doc.lastAutoTable.finalY + 8;
+
+    // Footer
+    if (y > ph - 20) { doc.addPage(); y = 20; }
+    doc.setDrawColor(226,232,240);
+    doc.line(mx, y, pw-mx, y);
+    y += 5;
+    doc.setFontSize(7);
+    doc.setTextColor(100,116,139);
+    doc.setFont("helvetica","italic");
+    doc.text("Dokumen ini adalah REALCOUNT INTERNAL / HASIL SEMENTARA.", mx, y);
+    y += 4;
+    doc.text("Data dihimpun dari laporan saksi TPS dan bukan hasil resmi penyelenggara pemilihan.", mx, y);
+    y += 6;
+    doc.setFont("helvetica","normal");
+    doc.text("Dibuat otomatis pada " + tgl + " " + jam, mx, y);
+
+    doc.save("Rekap_Pilkades_Sriamur_" + now.getTime() + ".pdf");
+    Utils.toast("PDF berhasil diunduh!", "success");
+  }
+
   loadConfig().then(() => loadRekap());
 </script>
 </body>
