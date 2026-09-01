@@ -1,4 +1,4 @@
-# 🗳️ Pilkades Desa Sriamur 2024 — Pusat Tabulasi Suara
+# 🗳️ Pilkades Desa Sriamur 2026 — Pusat Tabulasi Suara
 
 Aplikasi web untuk rekapitulasi suara Pemilihan Kepala Desa Sriamur.
 
