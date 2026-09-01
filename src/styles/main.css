@@ -265,6 +265,15 @@ a { color: inherit; text-decoration: none; }
 .calon-foto-box input[type=file] { position: absolute; opacity: 0; width: 100%; height: 100%; cursor: pointer; }
 .calon-foto-info { flex: 1; }
 
+
+/* ===== DASHBOARD GRID (wide screens) ===== */
+.dashboard-top {
+  display: block;
+}
+.candidate-grid {
+  display: block;
+}
+
 /* ===== RESPONSIVE ===== */
 @media (min-width: 640px) {
   .section { max-width: 100%; padding: 16px 24px; }
@@ -294,6 +303,8 @@ a { color: inherit; text-decoration: none; }
 
 /* ===== DESKTOP (1024px+) ===== */
 @media (min-width: 1024px) {
+  .dashboard-top { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .candidate-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
   .section { max-width: 100%; padding: 24px 48px; }
   .tps-status-grid { grid-template-columns: repeat(10, 1fr); gap: 12px; }
   .tps-dot { font-size: 16px; }
@@ -308,6 +319,9 @@ a { color: inherit; text-decoration: none; }
 
 /* ===== WIDE MONITOR (1280px+) ===== */
 @media (min-width: 1280px) {
+  .dashboard-top { grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+  .candidate-grid { grid-template-columns: 1fr 1fr; gap: 14px; }
+  .stat-row { grid-column: span 3; }
   .section { max-width: 100%; padding: 32px 64px; }
   .cmd-header { padding: 48px 40px 32px; }
   .cmd-header h1 { font-size: 42px; }
