@@ -267,7 +267,7 @@ a { color: inherit; text-decoration: none; }
 
 /* ===== RESPONSIVE ===== */
 @media (min-width: 640px) {
-  .section { max-width: 600px; }
+  .section { max-width: 100%; padding: 16px 24px; }
   .cmd-header h1 { font-size: 28px; }
   .tps-status-grid { grid-template-columns: repeat(10, 1fr); }
 }
@@ -279,7 +279,7 @@ a { color: inherit; text-decoration: none; }
 
 /* ===== TABLET (768px+) ===== */
 @media (min-width: 768px) {
-  .section { max-width: 740px; padding: 24px; }
+  .section { max-width: 100%; padding: 24px 32px; }
   .cmd-header { padding: 32px 24px 24px; }
   .cmd-header h1 { font-size: 32px; }
   .tps-card .big { font-size: 48px; }
@@ -294,7 +294,7 @@ a { color: inherit; text-decoration: none; }
 
 /* ===== DESKTOP (1024px+) ===== */
 @media (min-width: 1024px) {
-  .section { max-width: 960px; }
+  .section { max-width: 100%; padding: 24px 48px; }
   .tps-status-grid { grid-template-columns: repeat(10, 1fr); gap: 12px; }
   .tps-dot { font-size: 16px; }
   .rw-list { grid-template-columns: repeat(4, 1fr); gap: 10px; }
@@ -308,7 +308,7 @@ a { color: inherit; text-decoration: none; }
 
 /* ===== WIDE MONITOR (1280px+) ===== */
 @media (min-width: 1280px) {
-  .section { max-width: 1200px; padding: 32px; }
+  .section { max-width: 100%; padding: 32px 64px; }
   .cmd-header { padding: 48px 40px 32px; }
   .cmd-header h1 { font-size: 42px; }
   .tps-card .big { font-size: 56px; }
@@ -332,7 +332,7 @@ a { color: inherit; text-decoration: none; }
 
 /* ===== ULTRA WIDE (1536px+) ===== */
 @media (min-width: 1536px) {
-  .section { max-width: 1400px; }
+  .section { max-width: 100%; padding: 40px 80px; }
   .cmd-header h1 { font-size: 48px; }
   .tps-card .big { font-size: 64px; }
   .rw-list { grid-template-columns: repeat(6, 1fr); gap: 14px; }
