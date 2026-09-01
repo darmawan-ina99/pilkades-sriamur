@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Realcount Pilkades Sriamur 2026</title>
-  <link rel="stylesheet" href="src/styles/main.css?v=9">
+  <link rel="stylesheet" href="src/styles/main.css?v=10">
 </head>
 <body>
 
@@ -89,8 +89,8 @@
   Realcount Pilkades Sriamur 2026
 </div>
 
-<script src="src/scripts/config.js?v=9"></script>
-<script src="src/scripts/utils.js?v=9"></script>
+<script src="src/scripts/config.js?v=10"></script>
+<script src="src/scripts/utils.js?v=10"></script>
 <script>
   const COLORS = ['#1e40af', '#dc2626', '#16a34a', '#f59e0b'];
   let prevSuara = {};
@@ -162,8 +162,7 @@
       </div>`;
     }).join("");
 
-    // Peta Kemenangan
-    renderRWMap(r);
+    
 
     // TPS Status Grid
     document.getElementById("tps-grid").innerHTML = r.detail_tps.map(t => {
@@ -174,38 +173,6 @@
     // Store previous suara for delta
     if (isFirstLoad) { isFirstLoad = false; }
     r.calon.forEach(c => { prevSuara[c.nomor_urut] = c.suara; });
-  }
-
-  function renderRWMap(r) {
-    const rwEntries = Object.entries(CONFIG.RW_MAP);
-    const html = rwEntries.map(([rwName, tpsList]) => {
-      let calonTotals = {};
-      r.calon.forEach(c => { calonTotals[c.nomor_urut] = 0; });
-      let hasData = false;
-      tpsList.forEach(tpsNum => {
-        const tps = r.detail_tps.find(t => t.nomor_tps === tpsNum);
-        if (tps && tps.status_input === "sudah") {
-          hasData = true;
-          r.calon.forEach(c => {
-            calonTotals[c.nomor_urut] += (tps.suara_calon && tps.suara_calon[c.nomor_urut]) || 0;
-          });
-        }
-      });
-      if (!hasData) {
-        return `<div class="rw-item" style="border-left-color:var(--border);">
-          <div><div class="rw-name">${rwName}</div><div class="rw-no-data">menunggu data</div></div>
-        </div>`;
-      }
-      const sorted = Object.entries(calonTotals).sort((a,b) => b[1] - a[1]);
-      const winnerNum = parseInt(sorted[0][0]);
-      const winner = r.calon.find(c => c.nomor_urut === winnerNum);
-      const color = COLORS[winnerNum - 1] || '#888';
-      return `<div class="rw-item" style="border-left-color:${color};">
-        <div class="rw-dot" style="background:${color};"></div>
-        <div><div class="rw-name">${rwName}</div><div class="rw-winner" style="color:${color};">${winner?.nama || 'Calon '+winnerNum}</div></div>
-      </div>`;
-    }).join("");
-    document.getElementById("rw-map").innerHTML = html;
   }
 
   function showTPSDetail(nomor) {
