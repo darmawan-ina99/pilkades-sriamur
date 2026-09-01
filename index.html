@@ -4,7 +4,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Tabulasi Pilkades</title>
-  <link rel="stylesheet" href="src/styles/main.css?v=3">
+  <link rel="stylesheet" href="src/styles/main.css?v=4">
+  <style>
+    .candidate-foto { width:48px; height:48px; border-radius:50%; object-fit:cover; flex-shrink:0; }
+    .candidate-foto-placeholder { width:48px; height:48px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:800; color:#fff; font-size:20px; flex-shrink:0; }
+  </style>
 </head>
 <body>
 
@@ -66,16 +70,14 @@
   </div>
 </div>
 
-<script src="src/scripts/config.js?v=3"></script>
-<script src="src/scripts/utils.js?v=3"></script>
+<script src="src/scripts/config.js?v=4"></script>
+<script src="src/scripts/utils.js?v=4"></script>
 <script>
   const COLORS = ['#1e40af', '#dc2626', '#16a34a', '#f59e0b'];
-  let appConfig = null;
 
   async function loadConfig() {
     const res = await Utils.api("get_config", {});
     if (res.ok && res.config) {
-      appConfig = res.config;
       document.getElementById("hero-judul").textContent = res.config.judul;
       document.getElementById("hero-subjudul").textContent = res.config.subjudul;
       document.title = res.config.judul;
@@ -88,8 +90,7 @@
     const r = res.rekap;
     document.getElementById("dpt-total").textContent = Utils.formatAngka(r.total_pemilih);
     const pct = r.tps_total > 0 ? Math.round((r.tps_sudah / r.tps_total) * 100) : 0;
-    const ring = document.getElementById("ring");
-    ring.style.strokeDashoffset = 327 - (327 * pct / 100);
+    document.getElementById("ring").style.strokeDashoffset = 327 - (327 * pct / 100);
     document.getElementById("ring-text").textContent = pct + "%";
     document.getElementById("ring-sub").textContent = `${r.tps_sudah} dari ${r.tps_total} TPS`;
     document.getElementById("s-sah").textContent = Utils.formatAngka(r.total_suara_sah);
@@ -100,7 +101,11 @@
     document.getElementById("hasil-list").innerHTML = r.calon.map((c, i) => {
       const pctSuara = r.total_suara_sah > 0 ? Math.round((c.suara / r.total_suara_sah) * 100) : 0;
       const isWinner = i === 0 && c.suara > 0;
-      return `<div class="candidate-card ${isWinner ? 'winner' : ''}"><div class="candidate-header"><div class="candidate-num" style="background:${COLORS[c.nomor_urut - 1] || '#888'};">${c.nomor_urut}</div><div style="flex:1;"><div class="candidate-name">${c.nama || 'Calon ' + c.nomor_urut}</div>${isWinner ? '<span style="color:#f59e0b;font-size:12px;font-weight:700;">👑 Sementara Terdepan</span>' : ''}</div><div style="text-align:right;"><div class="candidate-votes">${Utils.formatAngka(c.suara)}</div><div class="candidate-pct">${pctSuara}%</div></div></div><div class="bar-container"><div class="bar-fill" style="width:${(c.suara / maxSuara) * 100}%;background:${COLORS[c.nomor_urut - 1] || '#888'};">${pctSuara}%</div></div></div>`;
+      const color = COLORS[c.nomor_urut - 1] || '#888';
+      const fotoHTML = c.foto
+        ? `<img src="${c.foto}" class="candidate-foto" alt="${c.nama || 'Calon '+c.nomor_urut}">`
+        : `<div class="candidate-foto-placeholder" style="background:${color};">${c.nomor_urut}</div>`;
+      return `<div class="candidate-card ${isWinner ? 'winner' : ''}"><div class="candidate-header">${fotoHTML}<div style="flex:1;margin-left:12px;"><div class="candidate-name">${c.nama || 'Calon ' + c.nomor_urut}</div>${isWinner ? '<span style="color:#f59e0b;font-size:12px;font-weight:700;">👑 Sementara Terdepan</span>' : ''}</div><div style="text-align:right;"><div class="candidate-votes">${Utils.formatAngka(c.suara)}</div><div class="candidate-pct">${pctSuara}%</div></div></div><div class="bar-container"><div class="bar-fill" style="width:${(c.suara / maxSuara) * 100}%;background:${color};">${pctSuara}%</div></div></div>`;
     }).join("");
     document.getElementById("tps-grid").innerHTML = r.detail_tps.map(t => {
       const cls = t.status_input === "sudah" ? "sudah" : "belum";

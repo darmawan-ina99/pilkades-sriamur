@@ -4,7 +4,15 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Admin — Pilkades</title>
-  <link rel="stylesheet" href="src/styles/main.css?v=3">
+  <link rel="stylesheet" href="src/styles/main.css?v=4">
+  <style>
+    .calon-foto-row { display:flex; gap:12px; align-items:flex-start; margin-bottom:12px; }
+    .calon-foto-box { width:80px; height:80px; border-radius:12px; border:2px dashed var(--border); display:flex; align-items:center; justify-content:center; overflow:hidden; cursor:pointer; flex-shrink:0; position:relative; background:var(--bg); }
+    .calon-foto-box img { width:100%; height:100%; object-fit:cover; }
+    .calon-foto-box .foto-placeholder { font-size:32px; color:var(--muted); }
+    .calon-foto-box input[type=file] { position:absolute; opacity:0; width:100%; height:100%; cursor:pointer; }
+    .calon-foto-info { flex:1; }
+  </style>
 </head>
 <body>
 
@@ -55,12 +63,12 @@
     <button class="btn btn-primary btn-block" onclick="simpanConfig()">💾 Simpan Pengaturan</button>
   </div>
 
-  <!-- Setup Calon -->
+  <!-- Setup Calon + Foto -->
   <div class="card">
-    <div style="font-weight:800;margin-bottom:12px;color:var(--primary);">🗳️ Setup Data Calon</div>
-    <div style="font-size:13px;color:var(--muted);margin-bottom:12px;">Masukkan nama 4 calon Kepala Desa</div>
+    <div style="font-weight:800;margin-bottom:12px;color:var(--primary);">🗳️ Data Calon & Foto</div>
+    <div style="font-size:13px;color:var(--muted);margin-bottom:12px;">Klik kotak foto untuk upload, lalu ketik nama calon. Perubahan tersimpan otomatis.</div>
     <div id="calon-forms"></div>
-    <button class="btn btn-success btn-block" onclick="simpanCalon()">💾 Simpan Data Calon</button>
+    <button class="btn btn-success btn-block" onclick="simpanCalon()" id="btn-simpan-calon">💾 Simpan Data Calon</button>
   </div>
 
   <!-- Status TPS -->
@@ -70,7 +78,6 @@
     <button class="btn btn-outline btn-sm" style="margin-top:12px;" onclick="loadTPSStatus()">🔄 Refresh</button>
   </div>
 
-  <!-- Aksi -->
   <div class="card">
     <div style="font-weight:800;margin-bottom:12px;color:var(--primary);">⚡ Aksi Cepat</div>
     <div style="display:flex;flex-direction:column;gap:10px;">
@@ -83,8 +90,8 @@
   <button class="btn btn-outline btn-block" style="border-color:var(--accent);color:var(--accent);" onclick="logout()">🚪 Logout</button>
 </div>
 
-<script src="src/scripts/config.js?v=3"></script>
-<script src="src/scripts/utils.js?v=3"></script>
+<script src="src/scripts/config.js?v=4"></script>
+<script src="src/scripts/utils.js?v=4"></script>
 <script>
   const COLORS = ['#1e40af', '#dc2626', '#16a34a', '#f59e0b'];
   let calonData = [];
@@ -131,29 +138,84 @@
     const subjudul = document.getElementById("cfg-subjudul").value.trim();
     const desa = document.getElementById("cfg-desa").value.trim();
     const total_dpt = parseInt(document.getElementById("cfg-dpt").value) || 0;
-
     if (!judul) { Utils.toast("Judul tidak boleh kosong!", "warn"); return; }
-
     const res = await Utils.api("set_config", { judul, subjudul, desa, total_dpt });
-    if (res.ok) {
-      Utils.toast("Pengaturan disimpan!", "success");
-    } else {
-      Utils.toast("Gagal: " + res.error, "error");
-    }
+    if (res.ok) Utils.toast("Pengaturan disimpan!", "success");
+    else Utils.toast("Gagal: " + res.error, "error");
   }
 
   async function loadCalonForm() {
     const res = await Utils.api("get_calon", {});
     calonData = res.ok ? res.calon : [];
+    renderCalonForms();
+  }
+
+  function renderCalonForms() {
     const el = document.getElementById("calon-forms");
     el.innerHTML = "";
     for (let i = 1; i <= CONFIG.CALON_COUNT; i++) {
       const existing = calonData.find(c => c.nomor_urut === i);
-      el.innerHTML += `<div class="form-group"><label class="form-label"><span style="display:inline-flex;align-items:center;gap:6px;"><span style="display:inline-flex;width:28px;height:28px;border-radius:50%;align-items:center;justify-content:center;background:${COLORS[i-1]};color:#fff;font-weight:800;">${i}</span>Calon No. Urut ${i}</span></label><input type="text" id="calon-nama-${i}" class="form-control" placeholder="Nama calon no. ${i}" value="${existing?.nama || ''}" oninput="updateCalon(${i}, '${existing?.id || ''}', this.value)"></div>`;
+      const foto = existing?.foto || "";
+      const fotoHTML = foto
+        ? `<img src="${foto}" alt="Calon ${i}">`
+        : `<div class="foto-placeholder">📷</div>`;
+      el.innerHTML += `
+        <div class="calon-foto-row">
+          <div class="calon-foto-box" id="foto-box-${i}">
+            ${fotoHTML}
+            <input type="file" accept="image/*" onchange="uploadFoto(${i}, '${existing?.id || ''}', this)">
+          </div>
+          <div class="calon-foto-info">
+            <label class="form-label"><span style="display:inline-flex;align-items:center;gap:6px;"><span style="display:inline-flex;width:24px;height:24px;border-radius:50%;align-items:center;justify-content:center;background:${COLORS[i-1]};color:#fff;font-weight:800;font-size:12px;">${i}</span>Calon No. Urut ${i}</span></label>
+            <input type="text" id="calon-nama-${i}" class="form-control" placeholder="Nama calon no. ${i}" value="${existing?.nama || ''}" oninput="updateCalon(${i}, '${existing?.id || ''}', this.value)">
+            <div style="font-size:11px;color:var(--muted);margin-top:4px;" id="foto-status-${i}">${foto ? '✅ Foto tersimpan' : 'Klik kotak untuk upload foto'}</div>
+          </div>
+        </div>`;
     }
     if (calonData.length > 0) {
-      el.innerHTML += `<div style="font-size:12px;color:var(--green);font-weight:600;margin-top:4px;">✅ Nama calon otomatis tersimpan saat diketik</div>`;
+      el.innerHTML += `<div style="font-size:12px;color:var(--green);font-weight:600;margin-top:4px;">✅ Nama & foto calon tersimpan otomatis</div>`;
     }
+  }
+
+  // Resize image to max 200x200 and convert to base64
+  function resizeImage(file, callback) {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const max = 200;
+        let w = img.width, h = img.height;
+        if (w > h) { if (w > max) { h = h * max / w; w = max; } }
+        else { if (h > max) { w = w * max / h; h = max; } }
+        canvas.width = w; canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, w, h);
+        callback(canvas.toDataURL('image/jpeg', 0.85));
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  async function uploadFoto(nomor, id, input) {
+    const file = input.files[0];
+    if (!file) return;
+    if (!id) { Utils.toast("Simpan nama calon dulu sebelum upload foto", "warn"); return; }
+    
+    document.getElementById("foto-status-" + nomor).textContent = "⏳ Uploading...";
+    
+    resizeImage(file, async (base64) => {
+      const res = await Utils.api("update_calon", { id, foto: base64 });
+      if (res.ok) {
+        document.getElementById("foto-box-" + nomor).innerHTML = `<img src="${base64}" alt="Calon ${nomor}"><input type="file" accept="image/*" onchange="uploadFoto(${nomor}, '${id}', this)">`;
+        document.getElementById("foto-status-" + nomor).textContent = "✅ Foto tersimpan";
+        Utils.toast("Foto calon " + nomor + " tersimpan!", "success");
+      } else {
+        document.getElementById("foto-status-" + nomor).textContent = "❌ Gagal upload";
+        Utils.toast("Gagal upload foto", "error");
+      }
+    });
   }
 
   let updateTimer = null;
@@ -172,10 +234,10 @@
       if (nama) calon.push({ nomor: i, nama });
     }
     if (calon.length === 0) { Utils.toast("Isi minimal 1 calon!", "warn"); return; }
-    if (calonData.length > 0) { Utils.toast("Calon sudah disimpan. Edit nama langsung di kolom.", "warn"); return; }
+    if (calonData.length > 0) { Utils.toast("Calon sudah disimpan. Edit langsung di kolom.", "warn"); return; }
     const res = await Utils.api("setup_calon", { calon });
     if (res.ok) { Utils.toast(res.pesan, "success"); loadCalonForm(); }
-    else { Utils.toast("Gagal: " + res.error, "error"); }
+    else Utils.toast("Gagal: " + res.error, "error");
   }
 
   async function loadTPSStatus() {
