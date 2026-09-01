@@ -3,9 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Tabulasi Pilkades Desa Sriamur 2024</title>
-  <meta name="description" content="Pusat Tabulasi Suara Pilkades Desa Sriamur - Hasil real-time pemilihan Kepala Desa">
-  <link rel="stylesheet" href="src/styles/main.css?v=2">
+  <title>Tabulasi Pilkades</title>
+  <link rel="stylesheet" href="src/styles/main.css?v=3">
 </head>
 <body>
 
@@ -21,8 +20,8 @@
 </nav>
 
 <section class="hero">
-  <h1>Pemilihan Kepala Desa Sriamur 2024</h1>
-  <p>Pusat Tabulasi Suara · 40 TPS · 4 Calon</p>
+  <h1 id="hero-judul">Pemilihan Kepala Desa Sriamur 2024</h1>
+  <p id="hero-subjudul">Pusat Tabulasi Suara · 40 TPS · 4 Calon</p>
   <div style="margin-top:16px;display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,.15);padding:8px 16px;border-radius:999px;">
     <span class="live-dot"></span>
     <span style="font-size:13px;font-weight:600;">Update Real-Time</span>
@@ -30,14 +29,12 @@
 </section>
 
 <div class="section">
-  <!-- DPT Card -->
   <div class="card" style="text-align:center;background:linear-gradient(135deg,var(--primary),var(--primary-dark));color:#fff;margin-bottom:16px;">
     <div style="font-size:13px;opacity:.8;">Total Daftar Pemilih Tetap (DPT)</div>
     <div style="font-size:36px;font-weight:800;margin:4px 0;" id="dpt-total">19.983</div>
     <div style="font-size:12px;opacity:.7;">Jiwa · 40 TPS</div>
   </div>
 
-  <!-- Progress Ring -->
   <div class="card" style="text-align:center;">
     <div class="progress-ring">
       <svg width="120" height="120">
@@ -50,7 +47,6 @@
     <div style="color:var(--muted);font-size:13px;margin-top:4px;" id="ring-sub">0 dari 40 TPS</div>
   </div>
 
-  <!-- Stats -->
   <div class="stat-grid">
     <div class="stat-item"><div class="stat-num" style="color:var(--green);" id="s-sah">0</div><div class="stat-label">Suara Sah</div></div>
     <div class="stat-item"><div class="stat-num" style="color:var(--accent);" id="s-tidak">0</div><div class="stat-label">Tidak Sah</div></div>
@@ -58,11 +54,9 @@
     <div class="stat-item"><div class="stat-num" style="color:var(--primary);" id="s-partisipasi">0%</div><div class="stat-label">Partisipasi</div></div>
   </div>
 
-  <!-- Hasil Sementara -->
   <div class="section-title">📊 Hasil Sementara</div>
   <div id="hasil-list"><div class="spinner"></div></div>
 
-  <!-- Status TPS -->
   <div class="section-title" style="margin-top:24px;">📍 Status Input TPS</div>
   <div class="tps-grid" id="tps-grid"><div class="spinner"></div></div>
 
@@ -72,67 +66,49 @@
   </div>
 </div>
 
-<script src="src/scripts/config.js?v=2"></script>
-<script src="src/scripts/utils.js?v=2"></script>
+<script src="src/scripts/config.js?v=3"></script>
+<script src="src/scripts/utils.js?v=3"></script>
 <script>
   const COLORS = ['#1e40af', '#dc2626', '#16a34a', '#f59e0b'];
+  let appConfig = null;
+
+  async function loadConfig() {
+    const res = await Utils.api("get_config", {});
+    if (res.ok && res.config) {
+      appConfig = res.config;
+      document.getElementById("hero-judul").textContent = res.config.judul;
+      document.getElementById("hero-subjudul").textContent = res.config.subjudul;
+      document.title = res.config.judul;
+    }
+  }
 
   async function loadRekap() {
     const res = await Utils.api("rekap", {});
     if (!res.ok) return;
     const r = res.rekap;
-
-    // DPT
     document.getElementById("dpt-total").textContent = Utils.formatAngka(r.total_pemilih);
-
-    // Progress ring
     const pct = r.tps_total > 0 ? Math.round((r.tps_sudah / r.tps_total) * 100) : 0;
     const ring = document.getElementById("ring");
-    const offset = 327 - (327 * pct / 100);
-    ring.style.strokeDashoffset = offset;
+    ring.style.strokeDashoffset = 327 - (327 * pct / 100);
     document.getElementById("ring-text").textContent = pct + "%";
     document.getElementById("ring-sub").textContent = `${r.tps_sudah} dari ${r.tps_total} TPS`;
-
-    // Stats
     document.getElementById("s-sah").textContent = Utils.formatAngka(r.total_suara_sah);
     document.getElementById("s-tidak").textContent = Utils.formatAngka(r.total_suara_tidak_sah);
     document.getElementById("s-abstain").textContent = Utils.formatAngka(r.total_abstain);
     document.getElementById("s-partisipasi").textContent = r.persentase_partisipasi + "%";
-
-    // Hasil calon
     const maxSuara = Math.max(...r.calon.map(c => c.suara), 1);
-    const listEl = document.getElementById("hasil-list");
-    listEl.innerHTML = r.calon.map((c, i) => {
+    document.getElementById("hasil-list").innerHTML = r.calon.map((c, i) => {
       const pctSuara = r.total_suara_sah > 0 ? Math.round((c.suara / r.total_suara_sah) * 100) : 0;
       const isWinner = i === 0 && c.suara > 0;
-      return `
-        <div class="candidate-card ${isWinner ? 'winner' : ''}">
-          <div class="candidate-header">
-            <div class="candidate-num" style="background:${COLORS[c.nomor_urut - 1] || '#888'};">${c.nomor_urut}</div>
-            <div style="flex:1;">
-              <div class="candidate-name">${c.nama || 'Calon ' + c.nomor_urut}</div>
-              ${isWinner ? '<span style="color:#f59e0b;font-size:12px;font-weight:700;">👑 Sementara Terdepan</span>' : ''}
-            </div>
-            <div style="text-align:right;">
-              <div class="candidate-votes">${Utils.formatAngka(c.suara)}</div>
-              <div class="candidate-pct">${pctSuara}%</div>
-            </div>
-          </div>
-          <div class="bar-container">
-            <div class="bar-fill" style="width:${(c.suara / maxSuara) * 100}%;background:${COLORS[c.nomor_urut - 1] || '#888'};">${pctSuara}%</div>
-          </div>
-        </div>`;
+      return `<div class="candidate-card ${isWinner ? 'winner' : ''}"><div class="candidate-header"><div class="candidate-num" style="background:${COLORS[c.nomor_urut - 1] || '#888'};">${c.nomor_urut}</div><div style="flex:1;"><div class="candidate-name">${c.nama || 'Calon ' + c.nomor_urut}</div>${isWinner ? '<span style="color:#f59e0b;font-size:12px;font-weight:700;">👑 Sementara Terdepan</span>' : ''}</div><div style="text-align:right;"><div class="candidate-votes">${Utils.formatAngka(c.suara)}</div><div class="candidate-pct">${pctSuara}%</div></div></div><div class="bar-container"><div class="bar-fill" style="width:${(c.suara / maxSuara) * 100}%;background:${COLORS[c.nomor_urut - 1] || '#888'};">${pctSuara}%</div></div></div>`;
     }).join("");
-
-    // TPS grid
-    const tpsEl = document.getElementById("tps-grid");
-    tpsEl.innerHTML = r.detail_tps.map(t => {
+    document.getElementById("tps-grid").innerHTML = r.detail_tps.map(t => {
       const cls = t.status_input === "sudah" ? "sudah" : "belum";
       return `<div class="tps-chip ${cls}" onclick="window.location.href='input.html?tps=${t.nomor_tps}'" title="TPS ${t.nomor_tps}">${t.nomor_tps}</div>`;
     }).join("");
   }
 
-  loadRekap();
+  loadConfig().then(() => loadRekap());
   setInterval(loadRekap, 15000);
 </script>
 </body>
