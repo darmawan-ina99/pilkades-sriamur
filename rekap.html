@@ -41,6 +41,7 @@
   <div class="card">
     <div style="font-weight:800;margin-bottom:12px;">📊 Ringkasan</div>
     <div class="stat-grid" style="margin-bottom:0;">
+      <div class="stat-item"><div class="stat-num" style="color:var(--primary);" id="s-dpt">0</div><div class="stat-label">Total DPT</div></div>
       <div class="stat-item"><div class="stat-num" style="color:var(--green);" id="s-sah">0</div><div class="stat-label">Suara Sah</div></div>
       <div class="stat-item"><div class="stat-num" style="color:var(--accent);" id="s-tidak">0</div><div class="stat-label">Tidak Sah</div></div>
       <div class="stat-item"><div class="stat-num" style="color:var(--gold);" id="s-abstain">0</div><div class="stat-label">Abstain</div></div>
@@ -91,6 +92,7 @@
     document.getElementById("s-sah").textContent = Utils.formatAngka(r.total_suara_sah);
     document.getElementById("s-tidak").textContent = Utils.formatAngka(r.total_suara_tidak_sah);
     document.getElementById("s-abstain").textContent = Utils.formatAngka(r.total_abstain);
+    document.getElementById("s-dpt").textContent = Utils.formatAngka(r.total_pemilih);
     document.getElementById("s-tps").textContent = `${r.tps_sudah}/${r.tps_total}`;
 
     // Hasil calon

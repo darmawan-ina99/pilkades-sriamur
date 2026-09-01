@@ -35,6 +35,13 @@
     </div>
   </div>
 
+  <!-- DPT Card -->
+  <div class="card" style="text-align:center;background:linear-gradient(135deg,var(--primary),var(--primary-dark));color:#fff;margin-bottom:16px;">
+    <div style="font-size:13px;opacity:.8;">Total DPT</div>
+    <div style="font-size:32px;font-weight:800;margin:4px 0;" id="dpt-total">0</div>
+    <div style="font-size:12px;opacity:.7;">Jiwa</div>
+  </div>
+
   <!-- Progress -->
   <div class="card" style="text-align:center;margin-bottom:16px;">
     <div class="progress-ring" style="width:100px;height:100px;">
@@ -92,57 +99,33 @@
     if (!res.ok) return;
     const r = res.rekap;
 
-    // Progress ring
+    document.getElementById("dpt-total").textContent = Utils.formatAngka(r.total_pemilih);
+
     const pct = r.tps_total > 0 ? Math.round((r.tps_sudah / r.tps_total) * 100) : 0;
     const ring = document.getElementById("ring");
     ring.style.strokeDashoffset = 264 - (264 * pct / 100);
     document.getElementById("ring-text").textContent = pct + "%";
     document.getElementById("ring-sub").textContent = `${r.tps_sudah} dari ${r.tps_total} TPS`;
 
-    // Stats
     document.getElementById("s-sah").textContent = Utils.formatAngka(r.total_suara_sah);
     document.getElementById("s-tidak").textContent = Utils.formatAngka(r.total_suara_tidak_sah);
     document.getElementById("s-abstain").textContent = Utils.formatAngka(r.total_abstain);
     document.getElementById("s-partisipasi").textContent = r.persentase_partisipasi + "%";
 
-    // Bar chart
     const maxSuara = Math.max(...r.calon.map(c => c.suara), 1);
     document.getElementById("chart-bar").innerHTML = r.calon.map(c => {
       const h = (c.suara / maxSuara) * 180;
       const pctSuara = r.total_suara_sah > 0 ? Math.round((c.suara / r.total_suara_sah) * 100) : 0;
-      return `
-        <div class="chart-col">
-          <div class="chart-num">${Utils.formatAngka(c.suara)}</div>
-          <div class="chart-rect" style="height:${h}px;background:${COLORS[c.nomor_urut-1]||'#888'};"></div>
-          <div class="chart-label">No. ${c.nomor_urut}<br>${pctSuara}%</div>
-        </div>`;
+      return `<div class="chart-col"><div class="chart-num">${Utils.formatAngka(c.suara)}</div><div class="chart-rect" style="height:${h}px;background:${COLORS[c.nomor_urut-1]||'#888'};"></div><div class="chart-label">No. ${c.nomor_urut}<br>${pctSuara}%</div></div>`;
     }).join("");
 
-    // Calon list
     const listEl = document.getElementById("calon-list");
     listEl.innerHTML = r.calon.map((c, i) => {
       const pctSuara = r.total_suara_sah > 0 ? Math.round((c.suara / r.total_suara_sah) * 100) : 0;
       const isWinner = i === 0 && c.suara > 0;
-      return `
-        <div class="candidate-card ${isWinner ? 'winner' : ''}">
-          <div class="candidate-header">
-            <div class="candidate-num" style="background:${COLORS[c.nomor_urut-1]||'#888'};">${c.nomor_urut}</div>
-            <div style="flex:1;">
-              <div class="candidate-name">${c.nama || 'Calon ' + c.nomor_urut}</div>
-              ${isWinner ? '<span style="color:#f59e0b;font-size:12px;font-weight:700;">👑 Terdepan</span>' : ''}
-            </div>
-            <div style="text-align:right;">
-              <div class="candidate-votes">${Utils.formatAngka(c.suara)}</div>
-              <div class="candidate-pct">${pctSuara}%</div>
-            </div>
-          </div>
-          <div class="bar-container">
-            <div class="bar-fill" style="width:${(c.suara / maxSuara) * 100}%;background:${COLORS[c.nomor_urut-1]||'#888'};">${pctSuara}%</div>
-          </div>
-        </div>`;
+      return `<div class="candidate-card ${isWinner ? 'winner' : ''}"><div class="candidate-header"><div class="candidate-num" style="background:${COLORS[c.nomor_urut-1]||'#888'};">${c.nomor_urut}</div><div style="flex:1;"><div class="candidate-name">${c.nama || 'Calon ' + c.nomor_urut}</div>${isWinner ? '<span style="color:#f59e0b;font-size:12px;font-weight:700;">👑 Terdepan</span>' : ''}</div><div style="text-align:right;"><div class="candidate-votes">${Utils.formatAngka(c.suara)}</div><div class="candidate-pct">${pctSuara}%</div></div></div><div class="bar-container"><div class="bar-fill" style="width:${(c.suara / maxSuara) * 100}%;background:${COLORS[c.nomor_urut-1]||'#888'};">${pctSuara}%</div></div></div>`;
     }).join("");
 
-    // Winner box
     if (r.calon[0] && r.calon[0].suara > 0) {
       const w = r.calon[0];
       document.getElementById("winner-box").style.display = "block";
@@ -152,11 +135,9 @@
       document.getElementById("winner-pct").textContent = `${pctSuara}% dari suara sah · ${r.tps_sudah}/${r.tps_total} TPS`;
     }
 
-    // TPS belum
     if (r.tps_belum_list && r.tps_belum_list.length > 0) {
       document.getElementById("tps-belum-card").style.display = "block";
-      document.getElementById("tps-belum-list").innerHTML = r.tps_belum_list
-        .map(n => `<span class="badge badge-belum">TPS ${n}</span>`).join("");
+      document.getElementById("tps-belum-list").innerHTML = r.tps_belum_list.map(n => `<span class="badge badge-belum">TPS ${n}</span>`).join("");
     } else {
       document.getElementById("tps-belum-card").style.display = "none";
     }

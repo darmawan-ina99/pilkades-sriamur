@@ -30,6 +30,13 @@
 </section>
 
 <div class="section">
+  <!-- DPT Card -->
+  <div class="card" style="text-align:center;background:linear-gradient(135deg,var(--primary),var(--primary-dark));color:#fff;margin-bottom:16px;">
+    <div style="font-size:13px;opacity:.8;">Total Daftar Pemilih Tetap (DPT)</div>
+    <div style="font-size:36px;font-weight:800;margin:4px 0;" id="dpt-total">19.983</div>
+    <div style="font-size:12px;opacity:.7;">Jiwa · 40 TPS</div>
+  </div>
+
   <!-- Progress Ring -->
   <div class="card" style="text-align:center;">
     <div class="progress-ring">
@@ -74,6 +81,9 @@
     const res = await Utils.api("rekap", {});
     if (!res.ok) return;
     const r = res.rekap;
+
+    // DPT
+    document.getElementById("dpt-total").textContent = Utils.formatAngka(r.total_pemilih);
 
     // Progress ring
     const pct = r.tps_total > 0 ? Math.round((r.tps_sudah / r.tps_total) * 100) : 0;
