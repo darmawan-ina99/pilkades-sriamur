@@ -1,9 +1,16 @@
 const Utils = {
   formatAngka(n) { return Number(n || 0).toLocaleString("id-ID"); },
+  formatWaktu(iso) {
+    if (!iso) return "--:--:--";
+    try {
+      const d = new Date(iso);
+      return d.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", second: "2-digit", timeZone: "Asia/Jakarta" }) + " WIB";
+    } catch { return "--:--:--"; }
+  },
   toast(msg, type = "info") {
     const el = document.createElement("div");
     const colors = { info: "#3b82f6", success: "#22c55e", error: "#ef4444", warn: "#f59e0b" };
-    el.style.cssText = `position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:${colors[type]||colors.info};color:#fff;padding:12px 24px;border-radius:12px;font-weight:600;z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,.3);font-size:14px;`;
+    el.style.cssText = `position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:${colors[type]||colors.info};color:#fff;padding:12px 24px;border-radius:12px;font-weight:600;z-index:99999;box-shadow:0 4px 20px rgba(0,0,0,.3);font-size:14px;`;
     el.textContent = msg;
     document.body.appendChild(el);
     setTimeout(() => el.remove(), 3000);

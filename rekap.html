@@ -3,25 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Rekapitulasi — Pilkades Sriamur 2024</title>
-  <link rel="stylesheet" href="src/styles/main.css?v=4">
-  <style>
-    .rekap-table { width:100%; border-collapse:collapse; font-size:12px; overflow-x:auto; display:block; }
-    .rekap-table th { background:var(--primary); color:#fff; padding:8px; text-align:center; position:sticky; top:0; }
-    .rekap-table td { padding:6px 8px; border-bottom:1px solid var(--border); text-align:center; }
-    .rekap-table tr.total-row { background:var(--primary-light); font-weight:800; }
-    .rekap-table tr.sudah { background: #f0fdf4; }
-    @media print {
-      .navbar, .btn { display:none !important; }
-      body { background:#fff; }
-      .card { box-shadow:none; border:1px solid #ccc; }
-    }
-  </style>
+  <title>Rekap — Realcount Pilkades</title>
+  <link rel="stylesheet" href="src/styles/main.css?v=5">
 </head>
 <body>
-
 <nav class="navbar">
-  <a class="navbar-brand" href="index.html">🗳️ Tabulasi Pilkades</a>
+  <a class="navbar-brand" href="index.html">🗳️ Realcount Pilkades</a>
   <div class="nav-links">
     <a href="index.html">Beranda</a>
     <a href="hasil.html">Hasil Live</a>
@@ -31,139 +18,75 @@
   </div>
 </nav>
 
+<header class="cmd-header">
+  <div class="live-badge"><span class="live-dot"></span> REKAPITULASI</div>
+  <h1 id="hero-judul">PILKADES SRIAMUR 2026</h1>
+  <div class="cmd-disclaimer">REALCOUNT INTERNAL · HASIL SEMENTARA</div>
+</header>
+
 <div class="section">
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
-    <div class="section-title" style="margin-bottom:0;">📋 Rekapitulasi Suara</div>
-    <button class="btn btn-outline btn-sm" onclick="window.print()">🖨️ Cetak / PDF</button>
+  <div class="disclaimer-banner"><strong>⚠️ REALCOUNT INTERNAL / HASIL SEMENTARA</strong><br>Data dihimpun dari laporan saksi TPS dan bukan hasil resmi penyelenggara pemilihan.</div>
+
+  <div class="card tps-card">
+    <div class="label">TPS TERINPUT</div>
+    <div class="big"><span id="tps-sudah">0</span> / 40</div>
+    <div class="progress-bar"><div class="progress-fill" id="tps-fill"></div></div>
+    <div class="progress-info"><span class="pct" id="tps-pct">0%</span><span id="tps-belum">40 TPS belum masuk</span></div>
   </div>
 
-  <!-- Ringkasan -->
-  <div class="card">
-    <div style="font-weight:800;margin-bottom:12px;">📊 Ringkasan</div>
-    <div class="stat-grid" style="margin-bottom:0;">
-      <div class="stat-item"><div class="stat-num" style="color:var(--primary);" id="s-dpt">0</div><div class="stat-label">Total DPT</div></div>
-      <div class="stat-item"><div class="stat-num" style="color:var(--green);" id="s-sah">0</div><div class="stat-label">Suara Sah</div></div>
-      <div class="stat-item"><div class="stat-num" style="color:var(--accent);" id="s-tidak">0</div><div class="stat-label">Tidak Sah</div></div>
-      <div class="stat-item"><div class="stat-num" style="color:var(--gold);" id="s-abstain">0</div><div class="stat-label">Abstain</div></div>
-      <div class="stat-item"><div class="stat-num" style="color:var(--primary);" id="s-tps">0/40</div><div class="stat-label">TPS Selesai</div></div>
-    </div>
+  <div class="stat-row">
+    <div class="stat-box green"><div class="stat-num" id="s-sah">0</div><div class="stat-label">Sah</div></div>
+    <div class="stat-box red"><div class="stat-num" id="s-tidak">0</div><div class="stat-label">Tidak Sah</div></div>
+    <div class="stat-box gold"><div class="stat-num" id="s-abstain">0</div><div class="stat-label">Abstain</div></div>
   </div>
 
-  <!-- Hasil Calon -->
-  <div class="card">
-    <div style="font-weight:800;margin-bottom:12px;">🗳️ Hasil Per Calon</div>
-    <div id="hasil-calon"><div class="spinner"></div></div>
-  </div>
+  <div class="section-title">🏆 Hasil Per Calon</div>
+  <div id="calon-list"><div class="spinner"></div></div>
 
-  <!-- Tabel Detail TPS -->
-  <div class="card">
-    <div style="font-weight:800;margin-bottom:12px;">📄 Detail per TPS</div>
-    <div style="overflow-x:auto;">
-      <table class="rekap-table" id="rekap-table">
-        <thead>
-          <tr id="th-row"><th>TPS</th><th>Status</th><th>DPT</th><th>Sah</th><th>Tidak Sah</th><th>Abstain</th></tr>
-        </thead>
-        <tbody id="rekap-body"><tr><td colspan="6"><div class="spinner"></div></td></tr></tbody>
-        <tfoot id="rekap-foot"></tfoot>
-      </table>
-    </div>
-  </div>
+  <div class="section-title">📋 Detail per TPS</div>
+  <div id="tps-detail"><div class="spinner"></div></div>
 
-  <!-- Cetak Hasil Akhir -->
-  <div class="card" id="cetak-akhir" style="display:none;text-align:center;background:linear-gradient(135deg,#fef3c7,#fde68a);border:2px solid var(--gold);">
-    <div style="font-size:40px;">🏆</div>
-    <div style="font-weight:800;font-size:16px;color:#92400e;">Semua TPS Selesai</div>
-    <div style="font-size:22px;font-weight:800;margin:8px 0;" id="pemenang-nama"></div>
-    <div style="font-size:28px;font-weight:800;color:var(--primary);" id="pemenang-suara"></div>
-  </div>
+  <button class="btn btn-primary btn-block" onclick="loadRekap()">🔄 Refresh Data</button>
 </div>
 
-<script src="src/scripts/config.js?v=4"></script>
-<script src="src/scripts/utils.js?v=4"></script>
+<script src="src/scripts/config.js?v=5"></script>
+<script src="src/scripts/utils.js?v=5"></script>
 <script>
   const COLORS = ['#1e40af', '#dc2626', '#16a34a', '#f59e0b'];
-
+  async function loadConfig() {
+    const res = await Utils.api("get_config", {});
+    if (res.ok && res.config) { document.getElementById("hero-judul").textContent = res.config.judul || "PILKADES SRIAMUR 2026"; document.title = "Rekap — " + (res.config.judul || "Realcount"); }
+  }
   async function loadRekap() {
     const res = await Utils.api("rekap", {});
     if (!res.ok) return;
     const r = res.rekap;
-
-    // Stats
+    document.getElementById("tps-sudah").textContent = r.tps_sudah;
+    const pct = r.tps_total > 0 ? Math.round((r.tps_sudah / r.tps_total) * 100) : 0;
+    document.getElementById("tps-fill").style.width = pct + "%";
+    document.getElementById("tps-pct").textContent = pct + "%";
+    document.getElementById("tps-belum").textContent = r.tps_belum + " TPS belum masuk";
     document.getElementById("s-sah").textContent = Utils.formatAngka(r.total_suara_sah);
     document.getElementById("s-tidak").textContent = Utils.formatAngka(r.total_suara_tidak_sah);
     document.getElementById("s-abstain").textContent = Utils.formatAngka(r.total_abstain);
-    document.getElementById("s-dpt").textContent = Utils.formatAngka(r.total_pemilih);
-    document.getElementById("s-tps").textContent = `${r.tps_sudah}/${r.tps_total}`;
-
-    // Hasil calon
     const maxSuara = Math.max(...r.calon.map(c => c.suara), 1);
-    document.getElementById("hasil-calon").innerHTML = r.calon.map((c, i) => {
-      const pct = r.total_suara_sah > 0 ? Math.round((c.suara / r.total_suara_sah) * 100) : 0;
-      return `
-        <div class="candidate-card ${i===0 && c.suara>0?'winner':''}">
-          <div class="candidate-header">
-            <div class="candidate-num" style="background:${COLORS[c.nomor_urut-1]||'#888'};">${c.nomor_urut}</div>
-            <div style="flex:1;"><div class="candidate-name">${c.nama||'Calon '+c.nomor_urut}</div></div>
-            <div style="text-align:right;">
-              <div class="candidate-votes">${Utils.formatAngka(c.suara)}</div>
-              <div class="candidate-pct">${pct}%</div>
-            </div>
-          </div>
-          <div class="bar-container">
-            <div class="bar-fill" style="width:${(c.suara/maxSuara)*100}%;background:${COLORS[c.nomor_urut-1]||'#888'};">${pct}%</div>
-          </div>
-        </div>`;
+    document.getElementById("calon-list").innerHTML = r.calon.map((c, i) => {
+      const pctSuara = r.total_suara_sah > 0 ? Math.round((c.suara / r.total_suara_sah) * 100) : 0;
+      const color = COLORS[c.nomor_urut - 1] || '#888';
+      const fotoHTML = c.foto ? `<img src="${c.foto}" class="candidate-foto" alt="${c.nama||''}">` : `<div class="candidate-foto-placeholder" style="background:${color};">${c.nomor_urut}</div>`;
+      return `<div class="candidate-card ${i===0&&c.suara>0?'winner':''}"><div class="candidate-header">${fotoHTML}<div class="candidate-info"><div class="candidate-name">${c.nama||'Calon '+c.nomor_urut}</div><div class="candidate-rank">No. ${c.nomor_urut} · #${i+1}</div></div><div class="candidate-votes"><div class="num">${Utils.formatAngka(c.suara)}</div><div class="pct">${pctSuara}%</div></div></div><div class="bar-container"><div class="bar-fill" style="width:${(c.suara/maxSuara)*100}%;background:${color};"></div></div></div>`;
     }).join("");
-
-    // Tabel header dinamis (tambah kolom per calon)
-    const thRow = document.getElementById("th-row");
-    thRow.innerHTML = `<th>TPS</th><th>Status</th><th>DPT</th><th>Sah</th><th>Tdk Sah</th><th>Abstain</th>`
-      + r.calon.map(c => `<th>No.${c.nomor_urut}</th>`).join("")
-      + `<th>Total</th>`;
-
-    // Tabel body
-    const body = document.getElementById("rekap-body");
-    body.innerHTML = r.detail_tps.map(t => {
-      const cls = t.status_input === "sudah" ? "sudah" : "";
-      const statusBadge = t.status_input === "sudah"
-        ? '<span class="badge badge-sudah">✅</span>'
-        : '<span class="badge badge-belum">⏳</span>';
-      const calonCells = r.calon.map(c => `<td>${t.suara_calon[c.nomor_urut] !== undefined ? Utils.formatAngka(t.suara_calon[c.nomor_urut]) : '-'}</td>`).join("");
-      return `<tr class="${cls}">
-        <td><strong>${t.nomor_tps}</strong></td>
-        <td>${statusBadge}</td>
-        <td>${t.status_input==='sudah'?Utils.formatAngka(t.jumlah_pemilih):'-'}</td>
-        <td>${t.status_input==='sudah'?Utils.formatAngka(t.suara_sah):'-'}</td>
-        <td>${t.status_input==='sudah'?Utils.formatAngka(t.suara_tidak_sah):'-'}</td>
-        <td>${t.status_input==='sudah'?Utils.formatAngka(t.suara_abstain):'-'}</td>
-        ${calonCells}
-        <td><strong>${t.status_input==='sudah'?Utils.formatAngka(t.total_suara_masuk):'-'}</strong></td>
-      </tr>`;
+    document.getElementById("tps-detail").innerHTML = r.detail_tps.map(t => {
+      const cls = t.status_input === "sudah" ? "badge-sudah" : "badge-belum";
+      const statusText = t.status_input === "sudah" ? "✅ Sudah" : "⏳ Belum";
+      let calonRow = "";
+      if (t.status_input === "sudah") {
+        calonRow = r.calon.map(c => { const s = (t.suara_calon && t.suara_calon[c.nomor_urut]) || 0; return `<div style="font-size:12px;color:var(--muted);">${c.nama||'Calon '+c.nomor_urut}: <strong>${Utils.formatAngka(s)}</strong></div>`; }).join("");
+      }
+      return `<div class="card" style="padding:12px;"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;"><div style="font-weight:800;">TPS ${t.nomor_tps}</div><span class="badge ${cls}">${statusText}</span></div><div style="font-size:12px;color:var(--muted);">DPT: ${Utils.formatAngka(t.jumlah_pemilih)} · Sah: ${Utils.formatAngka(t.suara_sah)} · Tidak Sah: ${Utils.formatAngka(t.suara_tidak_sah)}</div>${t.status_input === "sudah" ? `<div style="margin-top:8px;border-top:1px solid var(--border);padding-top:8px;">${calonRow}<div style="font-size:11px;color:var(--muted);margin-top:4px;">Update: ${Utils.formatWaktu(t.waktu_input)}</div></div>` : ""}</div>`;
     }).join("");
-
-    // Footer total
-    const foot = document.getElementById("rekap-foot");
-    foot.innerHTML = `<tr class="total-row">
-      <td>TOTAL</td>
-      <td>${r.tps_sudah}/${r.tps_total}</td>
-      <td>${Utils.formatAngka(r.total_pemilih)}</td>
-      <td>${Utils.formatAngka(r.total_suara_sah)}</td>
-      <td>${Utils.formatAngka(r.total_suara_tidak_sah)}</td>
-      <td>${Utils.formatAngka(r.total_abstain)}</td>
-      ${r.calon.map(c => `<td>${Utils.formatAngka(c.suara)}</td>`).join("")}
-      <td>${Utils.formatAngka(r.total_suara_masuk)}</td>
-    </tr>`;
-
-    // Hasil akhir jika semua TPS selesai
-    if (r.tps_sudah === r.tps_total && r.tps_total > 0) {
-      document.getElementById("cetak-akhir").style.display = "block";
-      const w = r.calon[0];
-      document.getElementById("pemenang-nama").textContent = w.nama || "Calon No. " + w.nomor_urut;
-      document.getElementById("pemenang-suara").textContent = Utils.formatAngka(w.suara) + " suara (" + (r.total_suara_sah > 0 ? Math.round((w.suara / r.total_suara_sah) * 100) : 0) + "%)";
-    }
   }
-
-  loadRekap();
+  loadConfig().then(() => loadRekap());
 </script>
 </body>
 </html>
