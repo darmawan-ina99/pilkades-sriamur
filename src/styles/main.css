@@ -276,3 +276,64 @@ a { color: inherit; text-decoration: none; }
   .nav-links a { padding: 6px 10px; font-size: 13px; }
   .section { padding: 12px; }
 }
+
+/* ===== TABLET (768px+) ===== */
+@media (min-width: 768px) {
+  .section { max-width: 740px; padding: 24px; }
+  .cmd-header { padding: 32px 24px 24px; }
+  .cmd-header h1 { font-size: 32px; }
+  .tps-card .big { font-size: 48px; }
+  .tps-status-grid { grid-template-columns: repeat(10, 1fr); gap: 10px; }
+  .tps-dot { font-size: 15px; }
+  .stat-row .stat-num { font-size: 28px; }
+  .rw-list { grid-template-columns: 1fr 1fr 1fr; }
+  .navbar { height: 64px; }
+  .navbar-brand { font-size: 18px; }
+  .nav-links a { font-size: 15px; padding: 10px 18px; }
+}
+
+/* ===== DESKTOP (1024px+) ===== */
+@media (min-width: 1024px) {
+  .section { max-width: 960px; }
+  .tps-status-grid { grid-template-columns: repeat(10, 1fr); gap: 12px; }
+  .tps-dot { font-size: 16px; }
+  .rw-list { grid-template-columns: repeat(4, 1fr); gap: 10px; }
+  .cmd-header h1 { font-size: 36px; }
+  .cmd-header { padding: 40px 32px 28px; }
+  .section-title { font-size: 18px; }
+  .candidate-card { padding: 20px; }
+  .candidate-name { font-size: 18px; }
+  .candidate-votes .num { font-size: 26px; }
+}
+
+/* ===== WIDE MONITOR (1280px+) ===== */
+@media (min-width: 1280px) {
+  .section { max-width: 1200px; padding: 32px; }
+  .cmd-header { padding: 48px 40px 32px; }
+  .cmd-header h1 { font-size: 42px; }
+  .tps-card .big { font-size: 56px; }
+  .tps-status-grid { grid-template-columns: repeat(10, 1fr); gap: 14px; }
+  .tps-dot { font-size: 18px; border-radius: 12px; }
+  .rw-list { grid-template-columns: repeat(6, 1fr); gap: 12px; }
+  .stat-row { gap: 16px; }
+  .stat-row .stat-num { font-size: 32px; }
+  .stat-row .stat-box { padding: 20px 12px; }
+  .candidate-card { padding: 24px; }
+  .candidate-name { font-size: 20px; }
+  .candidate-votes .num { font-size: 30px; }
+  .candidate-foto, .candidate-foto-placeholder { width: 64px; height: 64px; font-size: 26px; }
+  .navbar { height: 68px; }
+  .navbar-brand { font-size: 20px; }
+  .nav-links a { font-size: 16px; padding: 12px 22px; }
+  .section-title { font-size: 20px; margin-top: 32px; }
+  .card { padding: 24px; }
+  .total-card .big { font-size: 44px; }
+}
+
+/* ===== ULTRA WIDE (1536px+) ===== */
+@media (min-width: 1536px) {
+  .section { max-width: 1400px; }
+  .cmd-header h1 { font-size: 48px; }
+  .tps-card .big { font-size: 64px; }
+  .rw-list { grid-template-columns: repeat(6, 1fr); gap: 14px; }
+}
