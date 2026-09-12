@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Input Data — Realcount Pilkades</title>
-  <link rel="stylesheet" href="src/styles/main.css?v=12">
+  <link rel="stylesheet" href="src/styles/main.css?v=14">
 </head>
 <body>
 <nav class="navbar">
@@ -66,11 +66,12 @@
     </div>
 
     <button class="btn btn-success btn-block" onclick="simpanSuara()">💾 Simpan Input TPS</button>
+    <button class="btn btn-block" style="background:#ef4444;color:#fff;margin-top:8px;" onclick="resetTPS()">🔄 Reset Input TPS Ini</button>
   </div>
 </div>
 
-<script src="src/scripts/config.js?v=12"></script>
-<script src="src/scripts/utils.js?v=12"></script>
+<script src="src/scripts/config.js?v=14"></script>
+<script src="src/scripts/utils.js?v=14"></script>
 <script>
   const COLORS = ['#1e40af', '#dc2626', '#16a34a', '#f59e0b'];
   let calonList = [];
@@ -136,6 +137,19 @@
       const val = suaraMap[c.id] || 0;
       return '<div class="form-group"><label class="form-label"><span style="display:inline-flex;align-items:center;gap:8px;"><span style="display:inline-flex;width:28px;height:28px;border-radius:50%;align-items:center;justify-content:center;background:' + color + ';color:#fff;font-weight:800;font-size:13px;">' + c.nomor_urut + '</span>' + (c.nama || 'Calon ' + c.nomor_urut) + '</span></label><input type="number" id="calon-' + c.id + '" class="form-control" placeholder="0" value="' + val + '"></div>';
     }).join("");
+  }
+
+  async function resetTPS() {
+    const nomor_tps = parseInt(document.getElementById("select-tps").value);
+    if (!nomor_tps) { Utils.toast("Pilih TPS dulu!", "warn"); return; }
+    if (!confirm("Reset input TPS " + nomor_tps + "?\nSemua data suara TPS ini akan dihapus dari rekap.")) return;
+    const res = await Utils.api("reset_tps", { nomor_tps });
+    if (res.ok) {
+      Utils.toast(res.pesan || "TPS direset", "success");
+      const tps = tpsList.find(t => t.nomor_tps === nomor_tps);
+      if (tps) { tps.status_input = "belum"; tps.suara_sah = 0; tps.suara_tidak_sah = 0; tps.suara_abstain = 0; tps.total_suara_masuk = 0; tps.catatan = ""; }
+      loadTPS();
+    } else { Utils.toast("Gagal: " + (res.error || res.pesan || ""), "error"); }
   }
 
   async function simpanSuara() {

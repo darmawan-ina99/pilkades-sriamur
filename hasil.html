@@ -99,13 +99,18 @@
   </div>
 </div>
 
+<button class="btn btn-success btn-block" style="max-width:420px;margin:0 auto 20px;display:block;" onclick="downloadRekapPDF()">📄 Download PDF Hasil Keseluruhan</button>
+
 <div class="update-footer">
   Auto-refresh setiap 10 detik · <span id="auto-update-time"></span><br>
   Realcount Pilkades Sriamur 2026
 </div>
 
-<script src="src/scripts/config.js?v=12"></script>
-<script src="src/scripts/utils.js?v=12"></script>
+<script src="src/scripts/config.js?v=14"></script>
+<script src="src/scripts/utils.js?v=14"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+<script src="src/scripts/pdf-rekap.js?v=14"></script>
 <script>
   const COLORS = ['#1e40af', '#dc2626', '#16a34a', '#f59e0b'];
   let prevSuara = {};

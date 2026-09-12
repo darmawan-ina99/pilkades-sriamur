@@ -156,6 +156,12 @@ Deno.serve(async (req: Request) => {
       await db.PilkadesTPS.update(tps.id, { status_input: "belum", suara_sah: 0, suara_tidak_sah: 0, suara_abstain: 0, total_suara_masuk: 0, catatan: "", waktu_input: "" });
       const suaraLama = await db.PilkadesSuara.filter({ nomor_tps });
       for (const sl of suaraLama) await db.PilkadesSuara.delete(sl.id);
+      const allSuara = await db.PilkadesSuara.list();
+      const calonList = await db.PilkadesCalon.list();
+      for (const c of calonList) {
+        const total = allSuara.filter((s: any) => s.calon_id === c.id).reduce((sum: number, s: any) => sum + (s.jumlah_suara || 0), 0);
+        await db.PilkadesCalon.update(c.id, { total_suara: total });
+      }
       return json({ ok: true, pesan: `TPS ${nomor_tps} direset` });
     }
 
