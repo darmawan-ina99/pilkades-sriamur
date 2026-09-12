@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Admin — Realcount Pilkades</title>
-  <link rel="stylesheet" href="src/styles/main.css?v=12">
+  <link rel="stylesheet" href="src/styles/main.css?v=13">
 </head>
 <body>
 
@@ -79,8 +79,8 @@
   <button class="btn btn-outline btn-block" style="border-color:var(--accent);color:var(--accent);" onclick="logout()">🚪 Logout</button>
 </div>
 
-<script src="src/scripts/config.js?v=12"></script>
-<script src="src/scripts/utils.js?v=12"></script>
+<script src="src/scripts/config.js?v=13"></script>
+<script src="src/scripts/utils.js?v=13"></script>
 <script>
   const COLORS = ['#1e40af', '#dc2626', '#16a34a', '#f59e0b'];
   let calonData = [];
@@ -143,10 +143,13 @@
     if (calonData.length > 0) el.innerHTML += `<div style="font-size:12px;color:var(--green);font-weight:600;margin-top:4px;">✅ Nama & foto calon tersimpan otomatis</div>`;
   }
 
-  function resizeImage(file, cb) {
+  function resizeImage(file, cb, errCb) {
+    if (file.size > 15 * 1024 * 1024) { if (errCb) errCb("Foto terlalu besar (maks 15MB). Ambil ulang foto lebih kecil."); return; }
     const r = new FileReader();
+    r.onerror = () => { if (errCb) errCb("Gagal membaca file foto."); };
     r.onload = (e) => {
       const img = new Image();
+      img.onerror = () => { if (errCb) errCb("Format foto tidak didukung. Gunakan JPG/PNG, bukan HEIC/screenshot dari drive."); };
       img.onload = () => {
         const cv = document.createElement('canvas');
         const max = 200; let w = img.width, h = img.height;
@@ -163,8 +166,8 @@
 
   async function uploadFoto(nomor, id, input) {
     const file = input.files[0]; if (!file) return;
-    if (!id) { Utils.toast("Simpan nama calon dulu sebelum upload foto", "warn"); return; }
-    document.getElementById("foto-status-" + nomor).textContent = "⏳ Uploading...";
+    if (!id) { Utils.toast("Simpan nama calon dulu sebelum upload foto", "warn"); input.value = ""; return; }
+    document.getElementById("foto-status-" + nomor).textContent = "⏳ Mengunggah...";
     resizeImage(file, async (b64) => {
       const res = await Utils.api("update_calon", { id, foto: b64 });
       if (res.ok) {
@@ -172,9 +175,14 @@
         document.getElementById("foto-status-" + nomor).textContent = "✅ Foto tersimpan";
         Utils.toast("Foto calon " + nomor + " tersimpan!", "success");
       } else {
-        document.getElementById("foto-status-" + nomor).textContent = "❌ Gagal upload";
-        Utils.toast("Gagal upload foto", "error");
+        document.getElementById("foto-status-" + nomor).textContent = "❌ Gagal upload: " + (res.error || res.pesan || "coba lagi");
+        Utils.toast("Gagal upload foto: " + (res.error || res.pesan || ""), "error");
       }
+      input.value = "";
+    }, (msg) => {
+      document.getElementById("foto-status-" + nomor).textContent = "❌ " + msg;
+      Utils.toast(msg, "error");
+      input.value = "";
     });
   }
 
