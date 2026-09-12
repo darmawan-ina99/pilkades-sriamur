@@ -184,6 +184,7 @@
     let html = '';
     if (tps.status_input === "sudah") {
       html += `<div class="modal-row"><span class="label">Status</span><span class="val">✓ Terverifikasi</span></div>`;
+      if (tps.nama_saksi) html += `<div class="modal-row"><span class="label">Saksi</span><span class="val">${tps.nama_saksi}</span></div>`;
       html += `<div class="modal-row"><span class="label">Suara Sah</span><span class="val">${Utils.formatAngka(tps.suara_sah)}</span></div>`;
       html += `<div class="modal-row"><span class="label">Tidak Sah</span><span class="val">${Utils.formatAngka(tps.suara_tidak_sah)}</span></div>`;
       html += `<div class="modal-row"><span class="label">Abstain</span><span class="val">${Utils.formatAngka(tps.suara_abstain)}</span></div>`;

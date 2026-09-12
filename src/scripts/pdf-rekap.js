@@ -129,19 +129,19 @@ async function downloadRekapPDF() {
         const s = (t.suara_calon && t.suara_calon[c.nomor_urut]) || 0;
         return String(s);
       });
-      return ["TPS " + t.nomor_tps, status, Utils.formatAngka(t.jumlah_pemilih), Utils.formatAngka(t.suara_sah), Utils.formatAngka(t.suara_tidak_sah), Utils.formatAngka(t.suara_abstain), ...calonSuara];
+      return ["TPS " + t.nomor_tps, status, (t.nama_saksi || "-"), Utils.formatAngka(t.jumlah_pemilih), Utils.formatAngka(t.suara_sah), Utils.formatAngka(t.suara_tidak_sah), Utils.formatAngka(t.suara_abstain), ...calonSuara];
     });
 
-    const tpsHead = ["TPS", "Status", "DPT", "Sah", "T.Sah", "Abst.", ...r.calon.map(c => "C" + c.nomor_urut)];
+    const tpsHead = ["TPS", "Status", "Saksi", "DPT", "Sah", "T.Sah", "Abst.", ...r.calon.map(c => "C" + c.nomor_urut)];
     doc.autoTable({
       head: [tpsHead],
       body: tpsRows,
       startY: y,
       margin: { left: mx, right: mx },
-      styles: { fontSize: 7, cellPadding: 2 },
+      styles: { fontSize: 6, cellPadding: 1.5 },
       headStyles: { fillColor: [15,23,42], textColor: 255, fontStyle: "bold" },
       alternateRowStyles: { fillColor: [248,250,252] },
-      columnStyles: { 1: { halign: "center" }, 2: { halign: "right" }, 3: { halign: "right" }, 4: { halign: "right" }, 5: { halign: "right" } }
+      columnStyles: { 1: { halign: "center" }, 2: { cellWidth: 30 }, 3: { halign: "right" }, 4: { halign: "right" }, 5: { halign: "right" }, 6: { halign: "right" } }
     });
 
     y = doc.lastAutoTable.finalY + 8;

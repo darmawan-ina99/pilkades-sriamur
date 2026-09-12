@@ -109,12 +109,12 @@ Deno.serve(async (req: Request) => {
     }
 
     if (action === "input_suara") {
-      const { nomor_tps, jumlah_pemilih, suara_sah, suara_tidak_sah, suara_abstain, suara_calon, catatan } = body;
+      const { nomor_tps, nama_saksi, jumlah_pemilih, suara_sah, suara_tidak_sah, suara_abstain, suara_calon, catatan } = body;
       const tpsList = await db.PilkadesTPS.filter({ nomor_tps });
       if (!tpsList.length) return json({ ok: false, pesan: "TPS tidak ditemukan" }, 404);
       const tps = tpsList[0];
       const total_masuk = suara_sah + suara_tidak_sah + suara_abstain;
-      await db.PilkadesTPS.update(tps.id, { jumlah_pemilih, suara_sah, suara_tidak_sah, suara_abstain, total_suara_masuk: total_masuk, status_input: "sudah", catatan: catatan || "", waktu_input: new Date().toISOString() });
+      await db.PilkadesTPS.update(tps.id, { jumlah_pemilih, suara_sah, suara_tidak_sah, suara_abstain, total_suara_masuk: total_masuk, status_input: "sudah", catatan: catatan || "", nama_saksi: nama_saksi || "", waktu_input: new Date().toISOString() });
       const suaraLama = await db.PilkadesSuara.filter({ nomor_tps });
       for (const sl of suaraLama) await db.PilkadesSuara.delete(sl.id);
       for (const sc of suara_calon) await db.PilkadesSuara.create({ tps_id: tps.id, nomor_tps, calon_id: sc.calon_id, nomor_urut: sc.nomor_urut, jumlah_suara: sc.jumlah_suara });
@@ -153,7 +153,7 @@ Deno.serve(async (req: Request) => {
       const tpsList = await db.PilkadesTPS.filter({ nomor_tps });
       if (!tpsList.length) return json({ ok: false, pesan: "TPS tidak ditemukan" }, 404);
       const tps = tpsList[0];
-      await db.PilkadesTPS.update(tps.id, { status_input: "belum", suara_sah: 0, suara_tidak_sah: 0, suara_abstain: 0, total_suara_masuk: 0, catatan: "", waktu_input: "" });
+      await db.PilkadesTPS.update(tps.id, { status_input: "belum", suara_sah: 0, suara_tidak_sah: 0, suara_abstain: 0, total_suara_masuk: 0, catatan: "", nama_saksi: "", waktu_input: "" });
       const suaraLama = await db.PilkadesSuara.filter({ nomor_tps });
       for (const sl of suaraLama) await db.PilkadesSuara.delete(sl.id);
       const allSuara = await db.PilkadesSuara.list();

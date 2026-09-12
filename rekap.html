@@ -96,7 +96,7 @@
       if (t.status_input === "sudah") {
         calonRow = r.calon.map(c => { const s = (t.suara_calon && t.suara_calon[c.nomor_urut]) || 0; return '<div style="font-size:12px;color:var(--muted);">' + (c.nama||'Calon '+c.nomor_urut) + ': <strong>' + Utils.formatAngka(s) + '</strong></div>'; }).join("");
       }
-      return '<div class="card" style="padding:12px;"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;"><div style="font-weight:800;">TPS ' + t.nomor_tps + '</div><span class="badge ' + cls + '">' + statusText + '</span></div><div style="font-size:12px;color:var(--muted);">DPT: ' + Utils.formatAngka(t.jumlah_pemilih) + ' · Sah: ' + Utils.formatAngka(t.suara_sah) + ' · Tidak Sah: ' + Utils.formatAngka(t.suara_tidak_sah) + '</div>' + (t.status_input === "sudah" ? '<div style="margin-top:8px;border-top:1px solid var(--border);padding-top:8px;">' + calonRow + '<div style="font-size:11px;color:var(--muted);margin-top:4px;">Update: ' + Utils.formatWaktu(t.waktu_input) + '</div></div>' : "") + '</div>';
+      return '<div class="card" style="padding:12px;"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;"><div style="font-weight:800;">TPS ' + t.nomor_tps + '</div><span class="badge ' + cls + '">' + statusText + '</span></div><div style="font-size:12px;color:var(--muted);">DPT: ' + Utils.formatAngka(t.jumlah_pemilih) + ' · Sah: ' + Utils.formatAngka(t.suara_sah) + ' · Tidak Sah: ' + Utils.formatAngka(t.suara_tidak_sah) + '</div>' + (t.nama_saksi ? '<div style="font-size:12px;color:var(--muted);">👤 Saksi: <strong>' + t.nama_saksi + '</strong></div>' : '') + (t.status_input === "sudah" ? '<div style="margin-top:8px;border-top:1px solid var(--border);padding-top:8px;">' + calonRow + '<div style="font-size:11px;color:var(--muted);margin-top:4px;">Update: ' + Utils.formatWaktu(t.waktu_input) + '</div></div>' : "") + '</div>';
     }).join("");
   }
 
@@ -227,19 +227,19 @@
         const s = (t.suara_calon && t.suara_calon[c.nomor_urut]) || 0;
         return String(s);
       });
-      return ["TPS " + t.nomor_tps, status, Utils.formatAngka(t.jumlah_pemilih), Utils.formatAngka(t.suara_sah), Utils.formatAngka(t.suara_tidak_sah), Utils.formatAngka(t.suara_abstain), ...calonSuara];
+      return ["TPS " + t.nomor_tps, status, (t.nama_saksi || "-"), Utils.formatAngka(t.jumlah_pemilih), Utils.formatAngka(t.suara_sah), Utils.formatAngka(t.suara_tidak_sah), Utils.formatAngka(t.suara_abstain), ...calonSuara];
     });
 
-    const tpsHead = ["TPS", "Status", "DPT", "Sah", "T.Sah", "Abst.", ...r.calon.map(c => "C" + c.nomor_urut)];
+    const tpsHead = ["TPS", "Status", "Saksi", "DPT", "Sah", "T.Sah", "Abst.", ...r.calon.map(c => "C" + c.nomor_urut)];
     doc.autoTable({
       head: [tpsHead],
       body: tpsRows,
       startY: y,
       margin: { left: mx, right: mx },
-      styles: { fontSize: 7, cellPadding: 2 },
+      styles: { fontSize: 6, cellPadding: 1.5 },
       headStyles: { fillColor: [15,23,42], textColor: 255, fontStyle: "bold" },
       alternateRowStyles: { fillColor: [248,250,252] },
-      columnStyles: { 1: { halign: "center" }, 2: { halign: "right" }, 3: { halign: "right" }, 4: { halign: "right" }, 5: { halign: "right" } }
+      columnStyles: { 1: { halign: "center" }, 2: { cellWidth: 30 }, 3: { halign: "right" }, 4: { halign: "right" }, 5: { halign: "right" }, 6: { halign: "right" } }
     });
 
     y = doc.lastAutoTable.finalY + 8;

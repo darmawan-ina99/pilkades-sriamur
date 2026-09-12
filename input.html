@@ -36,6 +36,10 @@
     <div class="card">
       <div style="font-weight:800;margin-bottom:12px;color:var(--primary);">📊 Data Suara TPS <span id="tps-num-label"></span></div>
       <div class="form-group">
+        <label class="form-label">👤 Nama Saksi TPS <span style="color:#ef4444;">*</span></label>
+        <input type="text" id="inp-saksi" class="form-control" placeholder="Nama lengkap saksi TPS ini" autocomplete="off">
+      </div>
+      <div class="form-group">
         <label class="form-label">Jumlah Pemilih (DPT)</label>
         <input type="number" id="inp-pemilih" class="form-control" placeholder="0">
       </div>
@@ -131,6 +135,7 @@
     document.getElementById("form-input").style.display = "block";
     document.getElementById("tps-num-label").textContent = nomor;
     const tps = tpsList.find(t => t.nomor_tps === nomor);
+    document.getElementById("inp-saksi").value = tps?.nama_saksi || "";
     document.getElementById("inp-pemilih").value = tps?.jumlah_pemilih || 0;
     document.getElementById("inp-sah").value = tps?.suara_sah || 0;
     document.getElementById("inp-tidak").value = tps?.suara_tidak_sah || 0;
@@ -173,6 +178,8 @@
     const nomor_tps = parseInt(document.getElementById("select-tps").value);
     if (!nomor_tps) { Utils.toast("Pilih TPS dulu!", "warn"); return; }
     if (!cekPinTPS(nomor_tps)) return;
+    const nama_saksi = (document.getElementById("inp-saksi").value || "").trim();
+    if (!nama_saksi) { Utils.toast("Nama saksi wajib diisi!", "warn"); return; }
     const jumlah_pemilih = parseInt(document.getElementById("inp-pemilih").value) || 0;
     const suara_sah = parseInt(document.getElementById("inp-sah").value) || 0;
     const suara_tidak_sah = parseInt(document.getElementById("inp-tidak").value) || 0;
@@ -180,7 +187,7 @@
     const catatan = document.getElementById("inp-catatan").value;
     const suara_calon = calonList.map(c => ({ calon_id: c.id, nomor_urut: c.nomor_urut, jumlah_suara: parseInt(document.getElementById("calon-"+c.id).value) || 0 }));
     Utils.toast("Menyimpan...", "info");
-    const res = await Utils.api("input_suara", { nomor_tps, jumlah_pemilih, suara_sah, suara_tidak_sah, suara_abstain, suara_calon, catatan });
+    const res = await Utils.api("input_suara", { nomor_tps, nama_saksi, jumlah_pemilih, suara_sah, suara_tidak_sah, suara_abstain, suara_calon, catatan });
     if (res.ok) { Utils.toast(res.pesan, "success"); setTimeout(() => location.href = "hasil.html", 1500); }
     else Utils.toast("Gagal: " + res.error, "error");
   }
