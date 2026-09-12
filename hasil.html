@@ -156,7 +156,7 @@
           ${fotoHTML}
           <div class="candidate-info">
             <div class="candidate-name">${c.nama || 'Calon ' + c.nomor_urut}</div>
-            <div class="candidate-rank">No. Urut ${c.nomor_urut} · Peringkat #${i + 1}</div>
+            <div class="candidate-rank">No. Urut ${c.nomor_urut}${c.suara > 0 ? ' · Peringkat #' + (i + 1) : ''}</div>
             ${isWinner ? '<div class="candidate-badge">🏆 UNGGUL SEMENTARA</div>' : ''}
             ${deltaHTML}
           </div>
