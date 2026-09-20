@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Input Data — Realcount Pilkades</title>
-  <link rel="stylesheet" href="src/styles/main.css?v=15">
+  <link rel="stylesheet" href="src/styles/main.css?v=16">
 </head>
 <body>
 <nav class="navbar">
@@ -41,20 +41,21 @@
       </div>
       <div class="form-group">
         <label class="form-label">Jumlah Pemilih (DPT)</label>
-        <input type="number" id="inp-pemilih" class="form-control" placeholder="0">
+        <input type="number" id="inp-pemilih" class="form-control" placeholder="0" oninput="hitungTotal()">
       </div>
       <div class="form-group">
-        <label class="form-label">Suara Sah</label>
-        <input type="number" id="inp-sah" class="form-control" placeholder="0">
+        <label class="form-label">Suara Sah <span style="font-weight:400;color:var(--muted);">(otomatis dari total suara per calon)</span></label>
+        <input type="number" id="inp-sah" class="form-control" placeholder="0" readonly style="background:#f1f5f9;cursor:not-allowed;">
       </div>
       <div class="form-group">
         <label class="form-label">Suara Tidak Sah</label>
-        <input type="number" id="inp-tidak" class="form-control" placeholder="0">
+        <input type="number" id="inp-tidak" class="form-control" placeholder="0" oninput="hitungTotal()">
       </div>
       <div class="form-group">
         <label class="form-label">Abstain</label>
-        <input type="number" id="inp-abstain" class="form-control" placeholder="0">
+        <input type="number" id="inp-abstain" class="form-control" placeholder="0" oninput="hitungTotal()">
       </div>
+      <div id="total-info" style="font-size:13px;font-weight:700;padding:10px;border-radius:8px;margin-top:8px;"></div>
     </div>
 
     <div class="card">
@@ -77,13 +78,13 @@
       </div>
     </div>
 
-    <button class="btn btn-success btn-block" onclick="simpanSuara()">💾 Simpan Input TPS</button>
+    <button class="btn btn-success btn-block" id="btn-simpan" onclick="simpanSuara()">💾 Simpan Input TPS</button>
     <button class="btn btn-block" style="background:#ef4444;color:#fff;margin-top:8px;" onclick="resetTPS()">🔄 Reset Input TPS Ini</button>
   </div>
 </div>
 
-<script src="src/scripts/config.js?v=15"></script>
-<script src="src/scripts/utils.js?v=15"></script>
+<script src="src/scripts/config.js?v=16"></script>
+<script src="src/scripts/utils.js?v=16"></script>
 <script>
   const COLORS = ['#1e40af', '#dc2626', '#16a34a', '#f59e0b'];
   let calonList = [];
@@ -129,6 +130,36 @@
     }
   }
 
+  // FIX BUG: "Suara Sah" sekarang dihitung otomatis dari total input suara per calon,
+  // bukan diketik manual terpisah — supaya tidak bisa lagi tidak sinkron (dulu ada TPS
+  // yang suara_sah=0 padahal suara per calon sudah terisi).
+  function hitungTotal() {
+    const sahDariCalon = calonList.reduce((sum, c) => {
+      const el = document.getElementById("calon-" + c.id);
+      return sum + (el ? (parseInt(el.value) || 0) : 0);
+    }, 0);
+    document.getElementById("inp-sah").value = sahDariCalon;
+
+    const pemilih = parseInt(document.getElementById("inp-pemilih").value) || 0;
+    const tidak = parseInt(document.getElementById("inp-tidak").value) || 0;
+    const abstain = parseInt(document.getElementById("inp-abstain").value) || 0;
+    const totalMasuk = sahDariCalon + tidak + abstain;
+
+    const info = document.getElementById("total-info");
+    const btn = document.getElementById("btn-simpan");
+    if (pemilih > 0 && totalMasuk > pemilih) {
+      info.style.background = "#fef2f2";
+      info.style.color = "#dc2626";
+      info.textContent = "⚠️ Total suara masuk (" + totalMasuk + ") melebihi jumlah pemilih/DPT (" + pemilih + "). Periksa kembali angkanya sebelum simpan!";
+      if (btn) btn.disabled = true;
+    } else {
+      info.style.background = "#f0fdf4";
+      info.style.color = "#16a34a";
+      info.textContent = "✅ Total suara masuk: " + totalMasuk + " dari " + pemilih + " pemilih (sah " + sahDariCalon + " + tidak sah " + tidak + " + abstain " + abstain + ")";
+      if (btn) btn.disabled = false;
+    }
+  }
+
   async function loadTPS() {
     const nomor = parseInt(document.getElementById("select-tps").value);
     if (!nomor) { document.getElementById("form-input").style.display = "none"; return; }
@@ -148,8 +179,9 @@
     el.innerHTML = calonList.map(c => {
       const color = COLORS[c.nomor_urut - 1] || '#888';
       const val = suaraMap[c.id] || 0;
-      return '<div class="form-group"><label class="form-label"><span style="display:inline-flex;align-items:center;gap:8px;"><span style="display:inline-flex;width:28px;height:28px;border-radius:50%;align-items:center;justify-content:center;background:' + color + ';color:#fff;font-weight:800;font-size:13px;">' + c.nomor_urut + '</span>' + (c.nama || 'Calon ' + c.nomor_urut) + '</span></label><input type="number" id="calon-' + c.id + '" class="form-control" placeholder="0" value="' + val + '"></div>';
+      return '<div class="form-group"><label class="form-label"><span style="display:inline-flex;align-items:center;gap:8px;"><span style="display:inline-flex;width:28px;height:28px;border-radius:50%;align-items:center;justify-content:center;background:' + color + ';color:#fff;font-weight:800;font-size:13px;">' + c.nomor_urut + '</span>' + (c.nama || 'Calon ' + c.nomor_urut) + '</span></label><input type="number" id="calon-' + c.id + '" class="form-control" placeholder="0" value="' + val + '" oninput="hitungTotal()"></div>';
     }).join("");
+    hitungTotal();
   }
 
   async function resetTPS() {
@@ -181,13 +213,18 @@
     const nama_saksi = (document.getElementById("inp-saksi").value || "").trim();
     if (!nama_saksi) { Utils.toast("Nama saksi wajib diisi!", "warn"); return; }
     const jumlah_pemilih = parseInt(document.getElementById("inp-pemilih").value) || 0;
-    const suara_sah = parseInt(document.getElementById("inp-sah").value) || 0;
     const suara_tidak_sah = parseInt(document.getElementById("inp-tidak").value) || 0;
     const suara_abstain = parseInt(document.getElementById("inp-abstain").value) || 0;
     const catatan = document.getElementById("inp-catatan").value;
     const suara_calon = calonList.map(c => ({ calon_id: c.id, nomor_urut: c.nomor_urut, jumlah_suara: parseInt(document.getElementById("calon-"+c.id).value) || 0 }));
+    hitungTotal();
+    const sahDariCalon = suara_calon.reduce((s, c) => s + (c.jumlah_suara || 0), 0);
+    if (jumlah_pemilih > 0 && (sahDariCalon + suara_tidak_sah + suara_abstain) > jumlah_pemilih) {
+      Utils.toast("Total suara masuk melebihi jumlah pemilih! Periksa kembali angkanya.", "error");
+      return;
+    }
     Utils.toast("Menyimpan...", "info");
-    const payload = { nomor_tps, nama_saksi, jumlah_pemilih, suara_sah, suara_tidak_sah, suara_abstain, suara_calon, catatan };
+    const payload = { nomor_tps, nama_saksi, jumlah_pemilih, suara_tidak_sah, suara_abstain, suara_calon, catatan };
     let res = null;
     for (let i = 1; i <= 4; i++) {
       res = await Utils.api("input_suara", payload);
@@ -198,7 +235,7 @@
       await new Promise(r => setTimeout(r, 10000 * i));
     }
     if (res && res.ok) { Utils.toast(res.pesan, "success"); setTimeout(() => location.href = "hasil.html", 1500); }
-    else { Utils.toast("GAGAL: " + (res && res.error) + ". Data masih ada di form - tekan SIMPAN lagi.", "error"); }
+    else { Utils.toast("GAGAL: " + (res && (res.pesan || res.error)) + ". Data masih ada di form - tekan SIMPAN lagi.", "error"); }
   }
   init();
 </script>
