@@ -207,7 +207,11 @@
   function closeModal() { document.getElementById("tps-modal").classList.remove("active"); }
 
   loadConfig().then(() => loadRekap());
-  setInterval(loadRekap, 15000);
+  setInterval(() => {
+    if (document.hidden) return;
+    if (Utils.isRateLimited()) return;
+    loadRekap();
+  }, 20000);
 </script>
 </body>
 </html>

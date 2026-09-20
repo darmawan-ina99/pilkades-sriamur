@@ -1,4 +1,6 @@
 const Utils = {
+  rateLimitUntil: 0,
+  isRateLimited() { return Date.now() < (this.rateLimitUntil || 0); },
   formatAngka(n) { return Number(n || 0).toLocaleString("id-ID"); },
   formatWaktu(iso) {
     if (!iso) return "--:--:--";
@@ -17,12 +19,16 @@ const Utils = {
   },
   async api(action, params = {}) {
     try {
-      const res = await fetch(CONFIG.API_URL, {
+      const res = await fetch(CONFIG.URL || CONFIG.API_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action, ...params })
       });
-      return await res.json();
+      const d = await res.json();
+      if (d && d.error && String(d.error).toLowerCase().includes("rate limit")) {
+        Utils.rateLimitUntil = Date.now() + 45000;
+      }
+      return d;
     } catch (e) { return { ok: false, error: e.message }; }
   },
   getSesi() { try { return JSON.parse(localStorage.getItem("pilkades_sesi") || "null"); } catch { return null; } },

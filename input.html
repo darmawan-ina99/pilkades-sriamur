@@ -187,9 +187,18 @@
     const catatan = document.getElementById("inp-catatan").value;
     const suara_calon = calonList.map(c => ({ calon_id: c.id, nomor_urut: c.nomor_urut, jumlah_suara: parseInt(document.getElementById("calon-"+c.id).value) || 0 }));
     Utils.toast("Menyimpan...", "info");
-    const res = await Utils.api("input_suara", { nomor_tps, nama_saksi, jumlah_pemilih, suara_sah, suara_tidak_sah, suara_abstain, suara_calon, catatan });
-    if (res.ok) { Utils.toast(res.pesan, "success"); setTimeout(() => location.href = "hasil.html", 1500); }
-    else Utils.toast("Gagal: " + res.error, "error");
+    const payload = { nomor_tps, nama_saksi, jumlah_pemilih, suara_sah, suara_tidak_sah, suara_abstain, suara_calon, catatan };
+    let res = null;
+    for (let i = 1; i <= 4; i++) {
+      res = await Utils.api("input_suara", payload);
+      if (res.ok) break;
+      const limit = String(res.error || "").toLowerCase().includes("rate limit");
+      if (!limit || i === 4) break;
+      Utils.toast("Server sibuk, ulangi otomatis (" + i + "/3). JANGAN tutup halaman ini.", "warn");
+      await new Promise(r => setTimeout(r, 10000 * i));
+    }
+    if (res && res.ok) { Utils.toast(res.pesan, "success"); setTimeout(() => location.href = "hasil.html", 1500); }
+    else { Utils.toast("GAGAL: " + (res && res.error) + ". Data masih ada di form - tekan SIMPAN lagi.", "error"); }
   }
   init();
 </script>

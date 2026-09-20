@@ -240,7 +240,11 @@
   function closeModal() { document.getElementById("tps-modal").classList.remove("active"); }
 
   loadConfig().then(() => loadHasil());
-  setInterval(loadHasil, 10000);
+  setInterval(() => {
+    if (document.hidden) return;
+    if (Utils.isRateLimited()) return;
+    loadHasil();
+  }, 15000);
 </script>
 </body>
 </html>
