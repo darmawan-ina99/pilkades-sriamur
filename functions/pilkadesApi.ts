@@ -109,11 +109,41 @@ Deno.serve(async (req: Request) => {
     }
 
     if (action === "input_suara") {
-      const { nomor_tps, nama_saksi, jumlah_pemilih, suara_sah, suara_tidak_sah, suara_abstain, suara_calon, catatan } = body;
+      const { nomor_tps, nama_saksi, jumlah_pemilih, suara_tidak_sah, suara_abstain, suara_calon, catatan } = body;
+
+      if (!nomor_tps) return json({ ok: false, pesan: "Nomor TPS wajib diisi" }, 400);
+      if (!Array.isArray(suara_calon) || suara_calon.length === 0) {
+        return json({ ok: false, pesan: "Data suara per calon wajib diisi" }, 400);
+      }
+
       const tpsList = await db.PilkadesTPS.filter({ nomor_tps });
       if (!tpsList.length) return json({ ok: false, pesan: "TPS tidak ditemukan" }, 404);
       const tps = tpsList[0];
-      const total_masuk = suara_sah + suara_tidak_sah + suara_abstain;
+
+      // VALIDASI 1: nilai tidak boleh negatif
+      const numFields = [jumlah_pemilih, suara_tidak_sah, suara_abstain, ...suara_calon.map((s: any) => s.jumlah_suara)];
+      if (numFields.some((n: any) => typeof n !== "number" || Number.isNaN(n) || n < 0)) {
+        return json({ ok: false, pesan: "Semua jumlah suara harus berupa angka dan tidak boleh negatif" }, 400);
+      }
+
+      // VALIDASI 2 (FIX BUG): "suara sah" DIHITUNG OTOMATIS dari jumlah suara per calon.
+      // Sebelumnya field ini diisi manual terpisah dari input per-calon, sehingga bisa
+      // tidak sinkron (contoh nyata: TPS 11/33/37 punya suara_sah=0 padahal suara per
+      // calon sudah terisi). Sekarang backend adalah satu-satunya sumber kebenaran.
+      const suara_sah_calculated = suara_calon.reduce((sum: number, s: any) => sum + (s.jumlah_suara || 0), 0);
+      const suara_sah = suara_sah_calculated;
+
+      const total_masuk = suara_sah + (suara_tidak_sah || 0) + (suara_abstain || 0);
+
+      // VALIDASI 3 (FIX BUG): total suara masuk tidak boleh melebihi jumlah pemilih (DPT) TPS ini.
+      // Sebelumnya tidak ada pengecekan ini, sehingga 20 dari 40 TPS punya suara masuk > DPT.
+      if (jumlah_pemilih && total_masuk > jumlah_pemilih) {
+        return json({
+          ok: false,
+          pesan: `Total suara masuk (${total_masuk}) melebihi jumlah pemilih/DPT TPS ${nomor_tps} (${jumlah_pemilih}). Periksa kembali input suara sah/tidak sah/abstain dan suara per calon.`,
+        }, 400);
+      }
+
       await db.PilkadesTPS.update(tps.id, { jumlah_pemilih, suara_sah, suara_tidak_sah, suara_abstain, total_suara_masuk: total_masuk, status_input: "sudah", catatan: catatan || "", nama_saksi: nama_saksi || "", waktu_input: new Date().toISOString() });
       const suaraLama = await db.PilkadesSuara.filter({ nomor_tps });
       for (const sl of suaraLama) await db.PilkadesSuara.delete(sl.id);
@@ -124,7 +154,7 @@ Deno.serve(async (req: Request) => {
         const total = allSuara.filter((s: any) => s.calon_id === c.id).reduce((sum: number, s: any) => sum + (s.jumlah_suara || 0), 0);
         await db.PilkadesCalon.update(c.id, { total_suara: total });
       }
-      return json({ ok: true, pesan: `TPS ${nomor_tps} berhasil diinput` });
+      return json({ ok: true, pesan: `TPS ${nomor_tps} berhasil diinput (suara sah dihitung otomatis: ${suara_sah})` });
     }
 
     if (action === "rekap") {
